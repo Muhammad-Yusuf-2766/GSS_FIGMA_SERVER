@@ -1,0 +1,19 @@
+FROM node:alpine3.18
+
+# Ishlash joyini yaratish
+WORKDIR /app
+
+# package.json va package-lock.json fayllarini nusxalash
+COPY package.json ./
+
+# Node.js paketlarini o'rnatish
+RUN npm install
+
+# Qolgan fayllarni nusxalash
+COPY . .
+
+# Portni ochish
+EXPOSE 3000
+
+# Asosiy komanda
+CMD ["npm", "run", "start"]

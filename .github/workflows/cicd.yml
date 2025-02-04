@@ -1,0 +1,36 @@
+name: Deploy Node Application
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+      - name: Login to docker hub
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build Docker Image
+        run: docker build -t muhammadyusuf2766/gssiotfigma-server -f DockerFile .
+      - name: Publish Image to docker hub
+        run: docker push muhammadyusuf2766/gssiotfigma-server:latest
+      - name: Remove unused Docker images
+        run: docker system prune -af
+
+  deploy:
+    needs: build
+    runs-on: self-hosted
+    steps:
+      - name: Pull image from docker hub
+        run: docker pull muhammadyusuf2766/gssiotfigma-server:latest
+      - name: Delete old container
+        run: docker rm -f nodejs-server-container
+      - name: Run Docker Container
+        run: |
+          docker run -d -p 3000:3000 --name nodejs-server-container \
+          -e DB_PASSWORD='${{ secrets.DB_PASSWORD }}' \
+          -e JWT_SECRET_KEY='${{ secrets.JWT_SECRET_KEY }}' \
+          muhammadyusuf2766/gssiotfigma-server
