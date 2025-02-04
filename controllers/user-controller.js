@@ -2,7 +2,7 @@ const assert = require('assert')
 const UserService = require('../services/user.service')
 const jwt = require('jsonwebtoken')
 const path = require('path')
-const UserSchema = require('../Schema/User.model')
+const UserSchema = require('../schema/User.model')
 
 let userController = module.exports
 

@@ -1,10 +1,10 @@
 const assert = require('assert')
-const UserSchema = require('../Schema/User.model')
+const UserSchema = require('../schema/User.model')
 const bcrypt = require('bcryptjs')
 const BaseError = require('../errors/base.error')
 const nodemailer = require('nodemailer')
 const crypto = require('crypto')
-const Otp = require('../Schema/Otp.model')
+const Otp = require('../schema/Otp.model')
 
 class UserService {
 	constructor() {
