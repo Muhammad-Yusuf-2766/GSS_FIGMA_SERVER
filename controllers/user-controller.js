@@ -58,7 +58,8 @@ userController.checkUser = async (req, res) => {
 		console.log('request: Check me')
 		const token = req.cookies.access_token
 		if (!token) return res.status(401).send('Unauthorized')
-		const isVerified = jwt.verify(token, process.env.ACCESS_SECRET_KEY)
+
+		const isVerified = jwt.verify(token, process.env.JWT_SECRET_KEY)
 
 		const user = await UserSchema.findById(isVerified._id)
 		if (!user) {
@@ -176,7 +177,7 @@ userController.createToken = user => {
 			user_type: user.user_type,
 		}
 
-		const token = jwt.sign(upload_data, process.env.ACCESS_SECRET_KEY, {
+		const token = jwt.sign(upload_data, process.env.JWT_SECRET_KEY, {
 			expiresIn: '10d',
 		})
 
