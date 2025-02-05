@@ -18,7 +18,7 @@ userController.register = async (req, res, next) => {
 		res.cookie('access_token', token, {
 			maxAge: 10 * 24 * 3600 * 1000,
 			httpOnly: false,
-			sameSite: 'none',
+			// sameSite: 'none',
 			// secure: true,
 		})
 
@@ -42,7 +42,7 @@ userController.login = async (req, res, next) => {
 			httpOnly: false,
 			// sameSite: 'None', // Cookie'ni cross-site so'rovlarida saqlash
 			// secure: true, // faqat https da cookie ni saqlaydi,
-			sameSite: 'none',
+			// sameSite: 'none',
 			// path: '/', // barcha endpointlar uchun
 		})
 
