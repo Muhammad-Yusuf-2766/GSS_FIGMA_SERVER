@@ -14,7 +14,7 @@ const server = http.createServer(app)
 // Ruxsat etilgan domenlar
 const allowedOrigins = [
 	'https://infogssiot.com',
-	'http://43.203.125.106:3001',
+	'http://52.79.50.40:3001',
 	'http://localhost:5173',
 ]
 
