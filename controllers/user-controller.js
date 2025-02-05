@@ -17,9 +17,9 @@ userController.register = async (req, res, next) => {
 		const token = userController.createToken(new_user)
 		res.cookie('access_token', token, {
 			maxAge: 10 * 24 * 3600 * 1000,
-			httpOnly: true,
+			httpOnly: false,
 			sameSite: 'none',
-			secure: true,
+			// secure: true,
 		})
 
 		res.status(200).json({ state: 'success', user: new_user })
@@ -39,9 +39,9 @@ userController.login = async (req, res, next) => {
 		const token = userController.createToken(user)
 		res.cookie('access_token', token, {
 			maxAge: 10 * 24 * 3600 * 1000,
-			httpOnly: true,
+			httpOnly: false,
 			// sameSite: 'None', // Cookie'ni cross-site so'rovlarida saqlash
-			secure: true, // faqat https da cookie ni saqlaydi,
+			// secure: true, // faqat https da cookie ni saqlaydi,
 			sameSite: 'none',
 			// path: '/', // barcha endpointlar uchun
 		})
