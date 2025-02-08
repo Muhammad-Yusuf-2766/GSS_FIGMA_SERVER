@@ -8,15 +8,24 @@ const product_router = require('./routes/Product.route')
 const cors = require('cors')
 const { Server } = require('socket.io')
 const company_router = require('./routes/compnay.route')
+const { setupSocket } = require('./services/Socket.service')
 const app = express()
 const server = http.createServer(app)
 
-// Ruxsat etilgan domenlar
+// request allowed domains
 const allowedOrigins = [
 	'https://infogssiot.com',
 	'http://52.79.50.40:3001',
 	'http://localhost:5173',
 ]
+
+const io = new Server(server, {
+	cors: {
+		origin: allowedOrigins, // Specify the frontend's URL
+		methods: ['GET', 'POST'],
+		credentials: true,
+	},
+})
 
 app.use(express.json())
 app.use(cookieParser())
@@ -41,6 +50,8 @@ app.get('/', (req, res) => {
 app.use('/auth', user_router)
 app.use('/product', product_router)
 app.use('/company', company_router)
+
+setupSocket(io)
 
 const PORT = process.env.PORT || 3000
 

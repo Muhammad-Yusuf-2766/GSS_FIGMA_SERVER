@@ -69,6 +69,7 @@ companyController.getComanies = async (req, res) => {
 
 companyController.getClient = async (req, res) => {
 	try {
+		console.log('request: getCompany-buildings')
 		const { id } = req.params,
 			comapnyService = new CompanyService(),
 			buildings = await comapnyService.getCompanyData(id)

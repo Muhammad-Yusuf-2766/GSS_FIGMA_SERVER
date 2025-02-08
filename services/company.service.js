@@ -22,6 +22,7 @@ class CompanyService {
 			}
 
 			const existBuilding = await this.buildingSchema.findOne({
+				building_name: data.building_name,
 				building_num: data.building_num,
 			})
 

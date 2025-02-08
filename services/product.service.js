@@ -94,7 +94,7 @@ class ProductService {
 		try {
 			const nodes = await this.nodeSchema.find({ node_status: true })
 			if (!nodes || nodes.length == 0) {
-				throw new Error('There is no any active-nodes in database :(')
+				return []
 			}
 			return nodes
 		} catch (error) {
