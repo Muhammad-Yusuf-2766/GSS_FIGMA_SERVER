@@ -9,6 +9,8 @@ class ProductService {
 		this.buildingSchema = BuildingSchema
 	}
 
+	// =============================== Product creating & geting logics ================================== //
+
 	async createNodesData(dataArray) {
 		try {
 			const existNodes = await this.nodeSchema.find({
@@ -108,6 +110,78 @@ class ProductService {
 			return result
 		} catch (error) {
 			throw new Error('Error on fetching Product by id')
+		}
+	}
+
+	// =============================== Product changing logic ================================== //
+
+	async updateNodeStatusData(nodeId) {
+		try {
+			const updatingNode = await this.nodeSchema.findOneAndUpdate(
+				{ _id: nodeId },
+				[{ $set: { node_status: { $not: '$node_status' } } }], // Boolean qiymatni teskarisiga o‘girish
+				{ new: true } // Yangilangan ma'lumotni qaytarish
+			)
+
+			if (!updatingNode) {
+				throw new Error('Node not found')
+			}
+
+			return updatingNode
+		} catch (error) {
+			throw error
+		}
+	}
+
+	async deleteNodeData(nodeId) {
+		try {
+			const deletingNode = await this.nodeSchema.findOneAndDelete({
+				_id: nodeId,
+			})
+			if (!deletingNode) {
+				throw new Error('Node not found')
+			}
+
+			const updatedNodes = await this.nodeSchema.find()
+			return updatedNodes
+		} catch (error) {
+			console.error('Error deleting node:', error)
+			throw error
+		}
+	}
+
+	async updateGatewayStatusData(gatewayId) {
+		try {
+			const updatingGateway = await this.gatewaySchema.findOneAndUpdate(
+				{ _id: gatewayId },
+				[{ $set: { gateway_status: { $not: '$gateway_status' } } }], // Boolean qiymatni teskarisiga o‘girish
+				{ new: true } // Yangilangan ma'lumotni qaytarish
+			)
+
+			if (!updatingGateway) {
+				throw new Error('Node not found')
+			}
+
+			return updatingGateway
+		} catch (error) {
+			throw error
+		}
+	}
+
+	async deleteGatewayData(gatewayId) {
+		try {
+			const deleting = await this.gatewaySchema.findOneAndDelete({
+				_id: nodeId,
+			})
+			if (!deletedNode) {
+				throw new Error('Node not found')
+			}
+
+			const updatedGateways = await this.gatewaySchema.find()
+			return updatedGateways
+		} catch (error) {
+			console.error('Error deleting node:', error)
+			throw error
 		}
 	}
 }

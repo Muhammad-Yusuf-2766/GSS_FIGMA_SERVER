@@ -2,6 +2,8 @@ const ProductService = require('../services/product.service')
 
 let productController = module.exports
 
+// =============================== Product creating & geting logics ================================== //
+
 productController.createNodes = async (req, res) => {
 	try {
 		console.log('request: createNode')
@@ -90,16 +92,68 @@ productController.getActiveNodes = async (req, res) => {
 	}
 }
 
-// ==================================================================== //
-productController.getComany = async (req, res) => {
+// =============================== Product changing logic ================================== //
+
+productController.updateNodeStatus = async (req, res) => {
 	try {
-		console.log('request: getCompany', req.params)
-		const { id } = req.params,
-			comapnyService = new CompanyService(),
-			result = await comapnyService.getCompanyData(id)
-		res.json({ data: result })
+		console.log('POST: reActivateNode')
+		const { id } = req.params
+		const productService = new ProductService()
+		const result = await productService.updateNodeStatusData(id)
+		res.json({
+			state: 'success',
+			updated_node: result,
+		})
 	} catch (error) {
-		console.log('Error', error)
-		res.json({ state: 'Fail', message: error.message })
+		console.log('ERROR: update all nodes', error)
+		res.status(500).json({ state: 'Fail', message: error.message })
+	}
+}
+
+productController.deleteNode = async (req, res) => {
+	try {
+		console.log('POST: deleteNode')
+		const { id } = req.params
+		const productService = new ProductService()
+		const result = await productService.deleteNodeData(id)
+		res.json({
+			state: 'success',
+			updated_node: result,
+		})
+	} catch (error) {
+		console.log('ERROR: update all nodes', error)
+		res.status(500).json({ state: 'Fail', message: error.message })
+	}
+}
+
+productController.updateGatewayStatus = async (req, res) => {
+	try {
+		console.log('POST: reActivateNode')
+		const { id } = req.params
+		const productService = new ProductService()
+		const result = await productService.updateGatewayStatusData(id)
+		res.json({
+			state: 'success',
+			updated_gateway: result,
+		})
+	} catch (error) {
+		console.log('ERROR: update all nodes', error)
+		res.status(500).json({ state: 'Fail', message: error.message })
+	}
+}
+
+productController.deleteGateway = async (req, res) => {
+	try {
+		console.log('POST: deleteGateway')
+		const { id } = req.params
+		const productService = new ProductService()
+		const result = await productService.deleteGatewayData(id)
+		res.json({
+			state: 'Success',
+			deleted: result,
+		})
+	} catch (error) {
+		console.log('ERROR: update all nodes', error)
+		res.status(500).json({ state: 'Fail', message: error.message })
 	}
 }

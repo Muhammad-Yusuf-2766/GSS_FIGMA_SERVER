@@ -4,11 +4,7 @@ let companyController = module.exports
 
 companyController.createBuilding = async (req, res) => {
 	try {
-		console.log(
-			'request: createBuilding',
-			typeof req.body.permit_date,
-			req.body
-		)
+		console.log('request: createBuilding')
 		const data = req.body
 		const companyService = new CompanyService()
 		const result = await companyService.createBuildingData(data)

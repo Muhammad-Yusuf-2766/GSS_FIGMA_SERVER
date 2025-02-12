@@ -83,8 +83,6 @@ class CompanyService {
 
 	async createClientData(data) {
 		try {
-			console.log('Received data:', data)
-
 			// Transactionni boshlash
 			const session = await this.companySchema.startSession()
 			session.startTransaction()
