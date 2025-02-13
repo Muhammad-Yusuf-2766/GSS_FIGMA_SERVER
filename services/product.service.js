@@ -142,8 +142,7 @@ class ProductService {
 				throw new Error('Node not found')
 			}
 
-			const updatedNodes = await this.nodeSchema.find()
-			return updatedNodes
+			return deletingNode
 		} catch (error) {
 			console.error('Error deleting node:', error)
 			throw error

@@ -68,8 +68,12 @@ companyController.getClient = async (req, res) => {
 		console.log('request: getCompany-buildings')
 		const { id } = req.params,
 			comapnyService = new CompanyService(),
-			buildings = await comapnyService.getCompanyData(id)
-		res.json({ state: 'success', client_buildings: buildings })
+			result = await comapnyService.getCompanyData(id)
+		res.json({
+			state: 'success',
+			client: result.client,
+			client_buildings: result.buildings,
+		})
 	} catch (error) {
 		console.log('Error', error.message)
 		res.json({ state: 'Fail', message: error.message })
@@ -80,8 +84,49 @@ companyController.getBuildingNodes = async (req, res) => {
 	try {
 		const { id } = req.params,
 			comapnyService = new CompanyService(),
-			nodes = await comapnyService.getBuildingNodesData(id)
-		res.json({ state: 'success', nodes: nodes })
+			result = await comapnyService.getBuildingNodesData(id)
+		res.json({
+			state: 'success',
+			building: result.building,
+			nodes: result.nodes,
+		})
+	} catch (error) {
+		console.log('Error', error.message)
+		res.json({ state: 'Fail', message: error.message })
+	}
+}
+
+// ==========================================================================================================
+//                              CLIENT-Boss type user related functons                                     //
+// ==========================================================================================================
+
+companyController.getBossClients = async (req, res) => {
+	try {
+		console.log('request: getClientBoss')
+		const { userId } = req.body
+		const comapnyService = new CompanyService()
+		const clients = await comapnyService.getBossClientsData(userId)
+		res.json({
+			state: 'success',
+			clients: clients,
+		})
+	} catch (error) {
+		console.log('Error', error.message)
+		res.json({ state: 'Fail', message: error.message })
+	}
+}
+
+companyController.getBossBuildings = async (req, res) => {
+	try {
+		console.log('request: getBossBuildings')
+		const { clientId } = req.body,
+			comapnyService = new CompanyService(),
+			result = await comapnyService.getBossBuildingsData(clientId)
+		res.json({
+			state: 'success',
+			clients: result.client,
+			client_buildings: result.buildings,
+		})
 	} catch (error) {
 		console.log('Error', error.message)
 		res.json({ state: 'Fail', message: error.message })

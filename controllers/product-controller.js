@@ -94,15 +94,30 @@ productController.getActiveNodes = async (req, res) => {
 
 // =============================== Product changing logic ================================== //
 
-productController.updateNodeStatus = async (req, res) => {
+productController.updateProductStatus = async (req, res) => {
 	try {
 		console.log('POST: reActivateNode')
-		const { id } = req.params
+		const { product_type, product_id } = req.body
 		const productService = new ProductService()
-		const result = await productService.updateNodeStatusData(id)
-		res.json({
-			state: 'success',
-			updated_node: result,
+
+		if (product_type === 'NODE') {
+			const result = await productService.updateNodeStatusData(product_id)
+			return res.json({
+				state: 'success',
+				updated_node: result,
+			})
+		} else if (product_type === 'GATEWAY') {
+			const result = await productService.updateGatewayStatusData(product_id)
+			return res.json({
+				state: 'success',
+				updated_gateway: result,
+			})
+		}
+
+		// Agar hech qaysi shart bajarilmasa, "fail" javobi qaytariladi.
+		return res.json({
+			state: 'fail',
+			message: 'undefined product type.',
 		})
 	} catch (error) {
 		console.log('ERROR: update all nodes', error)
@@ -110,47 +125,29 @@ productController.updateNodeStatus = async (req, res) => {
 	}
 }
 
-productController.deleteNode = async (req, res) => {
+productController.deleteProduct = async (req, res) => {
 	try {
-		console.log('POST: deleteNode')
-		const { id } = req.params
+		console.log('POST: deleteProduct')
+		const { product_type, product_id } = req.body
 		const productService = new ProductService()
-		const result = await productService.deleteNodeData(id)
-		res.json({
-			state: 'success',
-			updated_node: result,
-		})
-	} catch (error) {
-		console.log('ERROR: update all nodes', error)
-		res.status(500).json({ state: 'Fail', message: error.message })
-	}
-}
 
-productController.updateGatewayStatus = async (req, res) => {
-	try {
-		console.log('POST: reActivateNode')
-		const { id } = req.params
-		const productService = new ProductService()
-		const result = await productService.updateGatewayStatusData(id)
-		res.json({
-			state: 'success',
-			updated_gateway: result,
-		})
-	} catch (error) {
-		console.log('ERROR: update all nodes', error)
-		res.status(500).json({ state: 'Fail', message: error.message })
-	}
-}
+		if (product_type === 'NODE') {
+			const result = await productService.deleteNodeData(product_id)
+			return res.json({
+				state: 'success',
+				deleted: result,
+			})
+		} else if (product_type === 'GATEWAY') {
+			const result = await productService.deleteGatewayData(product_id)
+			return res.json({
+				state: 'Success',
+				deleted: result,
+			})
+		}
 
-productController.deleteGateway = async (req, res) => {
-	try {
-		console.log('POST: deleteGateway')
-		const { id } = req.params
-		const productService = new ProductService()
-		const result = await productService.deleteGatewayData(id)
-		res.json({
-			state: 'Success',
-			deleted: result,
+		return res.json({
+			state: 'fail',
+			message: 'undefined product type.',
 		})
 	} catch (error) {
 		console.log('ERROR: update all nodes', error)

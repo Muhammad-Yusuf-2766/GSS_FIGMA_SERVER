@@ -45,7 +45,7 @@ const buildingSchema = new mongoose.Schema({
 		required: false, // Amal qilish muddati ko'rsatilsin
 		default: null,
 	},
-	company_id: {
+	client_id: {
 		type: mongoose.Schema.ObjectId,
 		default: null,
 		ref: 'Client',

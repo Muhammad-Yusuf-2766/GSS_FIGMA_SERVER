@@ -1,11 +1,11 @@
-const CompanySchema = require('../schema/Company.model')
+const ClientSchema = require('../schema/Company.model')
 const GatewaySchema = require('../schema/Gateway.model')
 const BuildingSchema = require('../schema/Building.model')
 const NodeSchema = require('../schema/Node.model')
 
 class CompanyService {
 	constructor() {
-		this.companySchema = CompanySchema
+		this.clientSchema = ClientSchema
 		this.gatewaySchema = GatewaySchema
 		this.buildingSchema = BuildingSchema
 		this.nodeSchema = NodeSchema
@@ -84,18 +84,18 @@ class CompanyService {
 	async createClientData(data) {
 		try {
 			// Transactionni boshlash
-			const session = await this.companySchema.startSession()
+			const session = await this.clientSchema.startSession()
 			session.startTransaction()
 
 			try {
 				// Step 1: Client saving
-				const company = new this.companySchema(data)
-				const result = await company.save({ session })
+				const client = new this.clientSchema(data)
+				const result = await client.save({ session })
 
-				// Step 2: Update `building_status` va `company_id`
+				// Step 2: Update `building_status` va `client_id`
 				const updateResult = await this.buildingSchema.updateMany(
 					{ _id: { $in: data.client_buildings } }, // 🛠 TO'G'RI FIELD NOMI!
-					{ $set: { building_status: false, company_id: company._id } },
+					{ $set: { building_status: false, client_id: client._id } },
 					{ session }
 				)
 
@@ -117,7 +117,7 @@ class CompanyService {
 
 	async getCompanies() {
 		try {
-			const result = await this.companySchema.find()
+			const result = await this.clientSchema.find()
 
 			return result
 		} catch (error) {
@@ -125,10 +125,11 @@ class CompanyService {
 		}
 	}
 
-	async getCompanyData(id) {
+	async getCompanyData(clientId) {
 		try {
-			const buildings = await this.buildingSchema.find({ company_id: id })
-			return buildings
+			const client = await this.clientSchema.findOne({ _id: clientId })
+			const buildings = await this.buildingSchema.find({ client_id: clientId })
+			return { client, buildings }
 		} catch (error) {
 			throw new Error('Error on fetching company by id')
 		}
@@ -150,7 +151,35 @@ class CompanyService {
 				gateway_id: { $in: gatewayIds },
 			})
 
-			return nodes
+			const building = await this.buildingSchema.findOne({ _id: buildingId })
+
+			return { building, nodes }
+		} catch (error) {
+			throw new Error('Error on fetching company by id')
+		}
+	}
+
+	// ==========================================================================================================
+	//                              CLIENT-Boss type user related functons                                     //
+	// ==========================================================================================================
+
+	async getBossClientsData(clientId) {
+		try {
+			const clients = await this.clientSchema.find({ boss_users: clientId })
+			return clients
+		} catch (error) {
+			throw new Error('Error on fetching company by id')
+		}
+	}
+
+	async getBossBuildingsData(clientId) {
+		try {
+			const client = await this.clientSchema.findOne({ boss_users: clientId })
+
+			const buildings = await this.buildingSchema.find({
+				client_id: clientId,
+			})
+			return { client, buildings }
 		} catch (error) {
 			throw new Error('Error on fetching company by id')
 		}

@@ -12,15 +12,7 @@ product_router.get('/get-nodes', productController.getNodes)
 product_router.get('/get-active-nodes', productController.getActiveNodes)
 
 // =============================== Product changing endpoints ================================== //
-product_router.get(
-	'/update-node-status/:id',
-	productController.updateNodeStatus
-)
-product_router.get('/delete-node-/:id', productController.deleteNode)
-product_router.get(
-	'/update-gateway-status/:id',
-	productController.updateGatewayStatus
-)
-product_router.get('/delete-gateway-/:id', productController.deleteGateway)
+product_router.post('/update-product', productController.updateProductStatus)
+product_router.post('/delete-product', productController.deleteProduct)
 
 module.exports = product_router

@@ -13,4 +13,7 @@ company_router.get(
 company_router.get('/clients/:id', companyController.getClient)
 company_router.get('/buildings/:id', companyController.getBuildingNodes)
 
+//  =========================  Boss Client user related endpoints ================ //
+company_router.post('/boss-clients', companyController.getBossClients)
+
 module.exports = company_router
