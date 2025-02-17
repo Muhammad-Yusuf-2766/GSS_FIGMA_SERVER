@@ -23,13 +23,18 @@ const userSchema = new Schema({
 	user_title: {
 		type: String,
 		required: false,
-		default: 'WORKER',
+		default: null,
 	},
 	user_type: {
 		type: String,
 		required: false,
 		enum: ['USER', 'BOSS', 'ADMIN'],
 		default: 'USER',
+	},
+	telegram_id: {
+		type: String,
+		required: false,
+		default: '',
 	},
 })
 

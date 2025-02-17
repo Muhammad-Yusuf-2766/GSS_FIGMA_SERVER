@@ -2,7 +2,7 @@ const mqtt = require('mqtt')
 const NodeHistorySchema = require('../schema/History.model')
 const NodeSchema = require('../schema/Node.model')
 const EventEmitter = require('events')
-// MQTT client setup
+const { notifyUsersOfOpenDoor } = require('../services/Telegrambot.service')
 
 // Xabarlarni tarqatish uchun EventEmitter
 const mqttEmitter = new EventEmitter()
@@ -65,6 +65,12 @@ mqttClient.on('message', async (topic, message) => {
 		const mqttEventSchema = new NodeHistorySchema(eventData)
 		await mqttEventSchema.save()
 		mqttEmitter.emit('mqttMessage', updatedNode)
+
+		// ==== Qo'shimcha: Eshik ochiq bo'lsa, bog'langan userlarga Telegram xabar yuborish ====
+		if (data.doorChk === 1) {
+			// 1 -> eshik ochildi deb faraz qilamiz
+			await notifyUsersOfOpenDoor(data.doorNum)
+		}
 	} else if (topic.startsWith(gwResTopic)) {
 		console.log('Gateway-creation event:', data)
 		emitGwRes(data)

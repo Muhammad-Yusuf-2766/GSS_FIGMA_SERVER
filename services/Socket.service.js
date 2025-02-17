@@ -1,4 +1,3 @@
-const BuildingSchema = require('../schema/Building.model')
 const GatewaySchema = require('../schema/Gateway.model')
 const { mqttEmitter } = require('./Mqtt.service')
 
@@ -18,7 +17,6 @@ const setupSocket = serverIo => {
 		if (gateway) {
 			const buildingId = gateway.building_id
 			const topic = `mqtt/building/${buildingId}`
-			console.log(topic)
 			io.emit(topic, updatedNode)
 		}
 	})

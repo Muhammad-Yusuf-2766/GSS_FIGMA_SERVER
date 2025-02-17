@@ -1,7 +1,6 @@
 const assert = require('assert')
 const UserService = require('../services/user.service')
 const jwt = require('jsonwebtoken')
-const path = require('path')
 const UserSchema = require('../schema/User.model')
 
 let userController = module.exports
@@ -13,14 +12,14 @@ userController.register = async (req, res, next) => {
 		const userService = new UserService()
 		const new_user = await userService.registerData(data)
 
-		// JWT related logic
-		const token = userController.createToken(new_user)
-		res.cookie('access_token', token, {
-			maxAge: 10 * 24 * 3600 * 1000,
-			httpOnly: false,
-			// sameSite: 'none',
-			// secure: true,
-		})
+		// // JWT related logic
+		// const token = userController.createToken(new_user)
+		// res.cookie('access_token', token, {
+		// 	maxAge: 10 * 24 * 3600 * 1000,
+		// 	httpOnly: false,
+		// 	// sameSite: 'none',
+		// 	// secure: true,
+		// })
 
 		res.status(200).json({ state: 'success', user: new_user })
 	} catch (error) {
@@ -35,6 +34,13 @@ userController.login = async (req, res, next) => {
 		const data = req.body
 		const userService = new UserService()
 		const user = await userService.loginData(data)
+		if (!user.telegram_id || user.telegram_id === '') {
+			return res.json({
+				state: 'continue',
+				message: 'Telegram bot bilan bog‘lanish uchun quyidagi linkga bosing.',
+				bot_link: `https://t.me/gss_smart_guard_bot?start=${user._id}`,
+			})
+		}
 		// JWT related logic
 		const token = userController.createToken(user)
 		res.cookie('access_token', token, {
