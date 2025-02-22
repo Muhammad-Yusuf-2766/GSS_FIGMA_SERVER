@@ -27,7 +27,7 @@ companyController.getActiveBuildings = async (req, res) => {
 		res.json({ state: 'succcess', buildings: buildings })
 	} catch (error) {
 		console.log(error.message)
-		res.json({ state: 'Fail', message: error.message })
+		res.json({ state: 'fail', message: error.message })
 	}
 }
 
@@ -44,7 +44,7 @@ companyController.createClient = async (req, res) => {
 		})
 	} catch (error) {
 		console.log(error.message)
-		res.json({ state: 'Fail', message: error.message })
+		res.json({ state: 'fail', message: error.message })
 	}
 }
 
@@ -92,7 +92,43 @@ companyController.getBuildingNodes = async (req, res) => {
 		})
 	} catch (error) {
 		console.log('Error', error.message)
-		res.json({ state: 'Fail', message: error.message })
+		res.json({ state: 'fail', message: error.message })
+	}
+}
+
+companyController.deleteCompany = async (req, res) => {
+	try {
+		console.log('request: deleteCompany')
+		const { clientId } = req.params
+		const companyService = new CompanyService(),
+			result = await companyService.deleteCompanyData(clientId)
+
+		res.json({
+			state: 'success',
+			client: clientId,
+			message: result.message,
+		})
+	} catch (error) {
+		console.log(error.message)
+		res.json({ state: 'fail', message: error.message })
+	}
+}
+
+companyController.deleteBuilding = async (req, res) => {
+	try {
+		console.log('request: deleteBuilding')
+		const { buildingId } = req.params
+		const companyService = new CompanyService(),
+			result = await companyService.deleteBuildingData(buildingId)
+
+		res.json({
+			state: 'success',
+			building: buildingId,
+			message: result.message,
+		})
+	} catch (error) {
+		console.log(error.message)
+		res.json({ state: 'fail', message: error.message })
 	}
 }
 

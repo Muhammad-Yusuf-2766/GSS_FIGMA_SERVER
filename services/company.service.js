@@ -135,6 +135,33 @@ class CompanyService {
 		}
 	}
 
+	async deleteCompanyData(clientId) {
+		try {
+			// 1. Clientni topish va uning ichidagi client_buildings array'ni olish
+			const client = await this.clientSchema.findById(clientId)
+			if (!client) {
+				throw new Error('Client not found')
+			}
+
+			// 2. client_buildings ichidagi barcha buildingId larni olish
+			const buildingIds = client.client_buildings
+
+			// 3. Barcha buildinglarning statusini true ga o'zgartirish
+			await this.buildingSchema.updateMany(
+				{ _id: { $in: buildingIds } }, // buildingId lar bo‘yicha qidirish
+				{ $set: { building_status: true } } // building_status ni true qilish
+			)
+
+			// 4. Clientni o‘chirish
+			await this.clientSchema.findByIdAndDelete(clientId)
+
+			return { message: 'Client o‘chirildi uning binolari yangilandi.' }
+		} catch (error) {
+			console.error(error)
+			throw new Error('Error on deleting company by id')
+		}
+	}
+
 	async getBuildingNodesData(buildingId) {
 		try {
 			const gateways = await this.gatewaySchema.find({
@@ -156,6 +183,33 @@ class CompanyService {
 			return { building, nodes }
 		} catch (error) {
 			throw new Error('Error on fetching company by id')
+		}
+	}
+
+	async deleteBuildingData(buildingId) {
+		try {
+			// 1. Clientni topish va uning ichidagi client_buildings array'ni olish
+			const building = await this.buildingSchema.findById(buildingId)
+			if (!building) {
+				throw new Error('Client not found')
+			}
+
+			// 2. client_buildings ichidagi barcha buildingId larni olish
+			const gatewayIds = building.gateway_sets
+
+			// 3. Barcha buildinglarning statusini true ga o'zgartirish
+			await this.gatewaySchema.updateMany(
+				{ _id: { $in: gatewayIds } }, // buildingId lar bo‘yicha qidirish
+				{ $set: { gateway_status: true } } // building_status ni true qilish
+			)
+
+			// 4. Clientni o‘chirish
+			await this.buildingSchema.findByIdAndDelete(buildingId)
+
+			return { message: 'Client o‘chirildi uning binolari yangilandi.' }
+		} catch (error) {
+			console.error(error)
+			throw new Error('Error on deleting company by id')
 		}
 	}
 

@@ -11,7 +11,6 @@ const company_router = require('./routes/compnay.route')
 const { setupSocket } = require('./services/Socket.service')
 const app = express()
 const server = http.createServer(app)
-// const { bot } = require('./services/Telegrambot.service')
 
 // request allowed domains
 const allowedOrigins = [

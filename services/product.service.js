@@ -1,6 +1,7 @@
 const NodeSchema = require('../schema/Node.model')
 const GatewaySchema = require('../schema/Gateway.model')
 const BuildingSchema = require('../schema/Building.model')
+const { mqttClient, mqttEmitter } = require('./Mqtt.service')
 
 class ProductService {
 	constructor() {
@@ -32,19 +33,68 @@ class ProductService {
 
 	async createGatewayData(data) {
 		try {
+			// exsting gateway checkng logic
 			const existGateway = await this.gatewaySchema.findOne({
 				serial_number: data.serial_number,
 			})
-
 			if (existGateway) {
 				throw new Error(
 					`일련 번호가 ${existGateway.serial_number}인 기존 게이트웨이가 있습니다. `
 				)
 			}
-
 			const gateway = new this.gatewaySchema(data)
 
+			// gateway Mqtt publish logic
+			const gw_number = data.serial_number
 			const nodesId = data.nodes
+			const nodes = await this.nodeSchema.find(
+				{ _id: { $in: nodesId } },
+				{ doorNum: 1, _id: 0 }
+			)
+
+			let topic = `GSSIOT/01030369081/GATE_SUB/GRM22JU22P${gw_number}`
+
+			const publishData = {
+				cmd: 2,
+				numNodes: nodes.length,
+				nodes: nodes.map(node => node.doorNum),
+			}
+			console.log('Publish-data:', publishData, topic)
+
+			// 3. MQTT serverga muvaffaqiyatli yuborilishini tekshirish
+			if (mqttClient.connected) {
+				const publishPromise = new Promise((resolve, reject) => {
+					mqttClient.publish(topic, JSON.stringify(publishData), err => {
+						if (err) {
+							reject(new Error(`MQTT publishing failed for topic: ${topic}`))
+						} else {
+							resolve(true)
+						}
+					})
+				})
+				// Publish'ning natijasini kutamiz
+				await publishPromise
+
+				const mqttResponsePromise = new Promise((resolve, reject) => {
+					mqttEmitter.once('gwPubRes', data => {
+						if (data.resp === 'success') {
+							resolve(true)
+						} else {
+							reject(new Error('Failed publishing gateway to mqtt'))
+						}
+					})
+
+					// Javob kutilayotgan vaqtda taymer qo'shing
+					setTimeout(() => {
+						reject(new Error('MQTT response timeout'))
+					}, 5000) // Masalan, 5 soniya kutish
+				})
+
+				await mqttResponsePromise
+			} else {
+				throw new Error('MQTT client is not connected')
+			}
+
 			await this.nodeSchema.updateMany(
 				{ _id: { $in: nodesId } },
 				{ $set: { node_status: false, gateway_id: gateway._id } }
