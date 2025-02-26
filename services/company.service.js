@@ -128,7 +128,9 @@ class CompanyService {
 	async getCompanyData(clientId) {
 		try {
 			const client = await this.clientSchema.findOne({ _id: clientId })
-			const buildings = await this.buildingSchema.find({ client_id: clientId })
+			const buildings = await this.buildingSchema
+				.find({ client_id: clientId })
+				.sort({ building_num: 1 })
 			return { client, buildings }
 		} catch (error) {
 			throw new Error('Error on fetching company by id')
@@ -230,9 +232,11 @@ class CompanyService {
 		try {
 			const client = await this.clientSchema.findOne({ boss_users: clientId })
 
-			const buildings = await this.buildingSchema.find({
-				client_id: clientId,
-			})
+			const buildings = await this.buildingSchema
+				.find({
+					client_id: clientId,
+				})
+				.sort({ building_num: 1 })
 			return { client, buildings }
 		} catch (error) {
 			throw new Error('Error on fetching company by id')
