@@ -128,7 +128,9 @@ class CompanyService {
 	async getCompanyData(clientId) {
 		try {
 			const client = await this.clientSchema.findOne({ _id: clientId })
-			const buildings = await this.buildingSchema.find({ client_id: clientId })
+			const buildings = await this.buildingSchema
+				.find({ client_id: clientId })
+				.sort({ building_num: 1 })
 			return { client, buildings }
 		} catch (error) {
 			throw new Error('Error on fetching company by id')
@@ -169,7 +171,7 @@ class CompanyService {
 			})
 
 			if (!gateways.length) {
-				return [] // Agar gateway yo'q bo'lsa, bo'sh massiv qaytarish
+				throw new Error('No gateways found for this building')
 			}
 
 			const gatewayIds = gateways.map(gateway => gateway._id)
@@ -180,9 +182,18 @@ class CompanyService {
 
 			const building = await this.buildingSchema.findOne({ _id: buildingId })
 
+			if (!building) {
+				throw new Error('Building not found')
+			}
+			if (!nodes || nodes.length === 0) {
+				throw new Error('No nodes found for this building')
+			}
+
 			return { building, nodes }
 		} catch (error) {
-			throw new Error('Error on fetching company by id')
+			// Errorni ushlash
+			console.error('Error in getBuildingNodesData:', error.message)
+			throw error // Asl xatoni qaytaramiz
 		}
 	}
 
@@ -230,9 +241,11 @@ class CompanyService {
 		try {
 			const client = await this.clientSchema.findOne({ boss_users: clientId })
 
-			const buildings = await this.buildingSchema.find({
-				client_id: clientId,
-			})
+			const buildings = await this.buildingSchema
+				.find({
+					client_id: clientId,
+				})
+				.sort({ building_num: 1 })
 			return { client, buildings }
 		} catch (error) {
 			throw new Error('Error on fetching company by id')
