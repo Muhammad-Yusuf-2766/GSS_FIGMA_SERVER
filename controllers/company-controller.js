@@ -82,17 +82,25 @@ companyController.getClient = async (req, res) => {
 
 companyController.getBuildingNodes = async (req, res) => {
 	try {
-		const { id } = req.params,
-			comapnyService = new CompanyService(),
-			result = await comapnyService.getBuildingNodesData(id)
+		console.log('request: getBuildingNodes')
+
+		const { id } = req.params
+		const companyService = new CompanyService()
+
+		const result = await companyService.getBuildingNodesData(id)
+
+		if (!result || !result.building || !result.nodes) {
+			throw new Error('No building or nodes found')
+		}
+
 		res.json({
 			state: 'success',
 			building: result.building,
 			nodes: result.nodes,
 		})
 	} catch (error) {
-		console.log('Error', error.message)
-		res.json({ state: 'fail', message: error.message })
+		console.error('Error in getBuildingNodes:', error.message)
+		res.status(400).json({ state: 'fail', message: error.message })
 	}
 }
 
