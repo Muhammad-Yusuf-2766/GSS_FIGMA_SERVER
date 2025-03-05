@@ -219,17 +219,38 @@ class ProductService {
 
 	async deleteGatewayData(gatewayId) {
 		try {
-			const deleting = await this.gatewaySchema.findOneAndDelete({
-				_id: nodeId,
-			})
-			if (!deletedNode) {
-				throw new Error('Node not found')
+			// Gateway mavjudligini tekshirish
+			const gateway = await this.gatewaySchema.findById(gatewayId)
+			if (!gateway) {
+				throw new Error('Gateway not found')
 			}
 
+			// Gateway ichidagi node'larni olish
+			const nodeIds = gateway.nodes
+
+			// Agar node mavjud bo'lsa, ularni yangilash
+			if (nodeIds.length > 0) {
+				await this.nodeSchema.updateMany(
+					{ _id: { $in: nodeIds } },
+					{ $set: { node_status: true } }
+				)
+			} else {
+				throw new Error('Gateway does not contain any nodes')
+			}
+
+			// Gateway'ni o‘chirish
+			const deletingGateway = await this.gatewaySchema.findOneAndDelete({
+				_id: gatewayId,
+			})
+			if (!deletingGateway) {
+				throw new Error('Gateway not found or already deleted')
+			}
+
+			// Yangilangan Gateway'larni qaytarish
 			const updatedGateways = await this.gatewaySchema.find()
 			return updatedGateways
 		} catch (error) {
-			console.error('Error deleting node:', error)
+			console.error('Error deleting gateway:', error)
 			throw error
 		}
 	}
