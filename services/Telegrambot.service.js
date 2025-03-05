@@ -88,12 +88,12 @@ async function notifyUsersOfOpenDoor(doorNum) {
 			return
 		}
 
-		const message = `🚪 ${doorNum} 번 노드 문이 열려 있습니다! 확인해 주세요. 
+		const message = `🚪 ${doorNum} 번 노드 문이 열려 있습니다! 확인해 주세요.
 
-     경로:  
-     🏢 building: ${buildings.map(b => b.building_name).join(', ')}  
-     🏢 building-number: ${buildings.map(b => b.building_num).join(', ')}  
-     
+     경로:
+     🏢 building: ${buildings.map(b => b.building_name).join(', ')}
+     🏢 building-number: ${buildings.map(b => b.building_num).join(', ')}
+
      infogssiot.com/client/dashboard/clients`
 
 		// 5. Har bir userga faqat 1 marta xabar yuborish

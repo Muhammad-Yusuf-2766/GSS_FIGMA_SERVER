@@ -176,9 +176,11 @@ class CompanyService {
 
 			const gatewayIds = gateways.map(gateway => gateway._id)
 
-			const nodes = await this.nodeSchema.find({
-				gateway_id: { $in: gatewayIds },
-			})
+			const nodes = await this.nodeSchema
+				.find({
+					gateway_id: { $in: gatewayIds },
+				})
+				.sort({ doorNum: 1 })
 
 			const building = await this.buildingSchema.findOne({ _id: buildingId })
 
