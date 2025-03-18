@@ -9,6 +9,7 @@ const cors = require('cors')
 const { Server } = require('socket.io')
 const company_router = require('./routes/compnay.route')
 const { setupSocket } = require('./services/Socket.service')
+const fileUpload = require('express-fileupload')
 const app = express()
 const server = http.createServer(app)
 
@@ -30,6 +31,9 @@ const io = new Server(server, {
 
 app.use(express.json())
 app.use(cookieParser())
+app.use(express.urlencoded({ extended: true }))
+app.use(fileUpload())
+app.use(express.static('static'))
 app.use(
 	cors({
 		// origin: true,

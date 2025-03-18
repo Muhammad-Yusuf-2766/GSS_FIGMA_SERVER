@@ -14,5 +14,6 @@ product_router.get('/get-active-nodes', productController.getActiveNodes)
 // =============================== Product changing endpoints ================================== //
 product_router.post('/update-product', productController.updateProductStatus)
 product_router.post('/delete-product', productController.deleteProduct)
+product_router.post('/set-node-position', productController.uploadXlsFile)
 
 module.exports = product_router

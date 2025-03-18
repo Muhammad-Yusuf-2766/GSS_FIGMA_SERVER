@@ -1,4 +1,7 @@
 const ProductService = require('../services/product.service')
+const path = require('path')
+const fs = require('fs')
+const fileService = require('../services/file.service')
 
 let productController = module.exports
 
@@ -152,5 +155,80 @@ productController.deleteProduct = async (req, res) => {
 	} catch (error) {
 		console.log('ERROR: update all nodes', error)
 		res.status(500).json({ state: 'Fail', message: error.message })
+	}
+}
+
+productController.setNodesPosition = async (req, res) => {
+	try {
+		console.log('POST: setNodesPosition')
+		const data = req.body
+
+		// Ma'lumotlarni tekshirish
+		// for (const item of data) {
+		// 	if (!item.nodeNum || !item.position) {
+		// 		return res.json({
+		// 			error: 'Fail',
+		// 			message:
+		// 				'No matching .xlsx, .xls file or data, please upload true file and data',
+		// 		})
+		// 	}
+		// }
+
+		const nodeService = new ProductService()
+		const result = await nodeService.setNodesPositionData(data)
+
+		// Agar xizmat xatosi bo'lsa
+		if (result.state === 'fail') {
+			return res.json(result)
+		}
+
+		// Muvaffaqiyatli javob
+		res.json({ state: 'success', message: result.message })
+	} catch (error) {
+		console.log('Error on setNodesPosition', error.message)
+		res.status(500).json({ state: 'fail', error: error.message })
+	}
+}
+
+productController.uploadXlsFile = async (req, res) => {
+	try {
+		console.log('request: uploadXlsFile')
+		const { buildingId, nodesPosition } = req.body
+		if (!req.files || !req.files.file) {
+			return res.status(400).json({ error: 'Fayl tanlanmagan' })
+		}
+
+		// Ma'lumotlarni tekshirish
+		const nodesPositionArrParsed = JSON.parse(nodesPosition)
+		for (const item of nodesPositionArrParsed) {
+			if (!item.nodeNum || !item.position) {
+				return res.json({
+					error: 'Fail',
+					message:
+						'No matching data structure, please check uploading file data structure!',
+				})
+			}
+		}
+
+		// file ni req dan olamiz
+		const file = Array.isArray(req.files.file)
+			? req.files.file[0]
+			: req.files.file
+
+		const nodeService = new ProductService()
+		const result = await nodeService.setNodesPositionData(
+			nodesPositionArrParsed,
+			buildingId,
+			file
+		)
+
+		if (result.state == 'fail') {
+			return res.json(result)
+		}
+
+		res.json({ state: 'success', message: result.message })
+	} catch (error) {
+		console.error(error)
+		res.json({ error: 'Serverda xatolik yuz berdi', error: error })
 	}
 }

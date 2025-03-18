@@ -2,6 +2,7 @@ const NodeSchema = require('../schema/Node.model')
 const GatewaySchema = require('../schema/Gateway.model')
 const BuildingSchema = require('../schema/Building.model')
 const { mqttClient, mqttEmitter } = require('./Mqtt.service')
+const fileService = require('./file.service')
 
 class ProductService {
 	constructor() {
@@ -252,6 +253,62 @@ class ProductService {
 		} catch (error) {
 			console.error('Error deleting gateway:', error)
 			throw error
+		}
+	}
+
+	async setNodesPositionData(nodesPosition, buildingId, file) {
+		try {
+			// Har bir element uchun alohida yangilash
+			const updatePromises = nodesPosition.map(async item => {
+				const result = await this.nodeSchema.updateMany(
+					{ doorNum: item.nodeNum }, // doorNum'ga mos keladigan node'larni yangilash
+					{ $set: { position: item.position } } // Har bir node uchun o'zining `position`ini yangilash
+				)
+				return {
+					doorNum: item.nodeNum, // ✅ nodeNum qaytarilyapti
+					matchedCount: result.matchedCount,
+					modifiedCount: result.modifiedCount,
+				}
+			})
+
+			const results = await Promise.all(updatePromises)
+
+			// ✅ Topilmagan node'larni ajratib olish
+			const noUpdates = results
+				.filter(res => res.matchedCount === 0)
+				.map(res => res.doorNum) // ✅ Faqat `doorNum` qaytarilyapti
+
+			if (noUpdates.length > 0) {
+				return {
+					state: 'fail',
+					message: `${noUpdates} 번 노드가 발견되지 않았습니다. 파일을 확인하세요!`,
+				}
+			}
+
+			// file va folderName ni kiritish kerak
+			const fileName = fileService.save(file, 'exels')
+
+			const building = await this.buildingSchema.findById(buildingId)
+			if (building) {
+				const oldFilename = building.nodes_position_file
+
+				if (oldFilename && oldFilename.trim() !== '') {
+					fileService.delete(oldFilename)
+				}
+
+				await this.buildingSchema.findByIdAndUpdate(
+					buildingId,
+					{ nodes_position_file: fileName },
+					{ new: true }
+				)
+			}
+
+			return {
+				message: `${nodesPosition.length}개 노드가 성공적으로 배치되었습니다.`,
+			}
+		} catch (error) {
+			console.error('Error on node positioning:', error)
+			throw new Error('Error on node positioning.') // ✅ Yangi `Error` obyektini qaytarish
 		}
 	}
 }

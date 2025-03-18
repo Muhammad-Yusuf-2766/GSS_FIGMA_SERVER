@@ -67,10 +67,10 @@ mqttClient.on('message', async (topic, message) => {
 		mqttEmitter.emit('mqttMessage', updatedNode)
 
 		// ==== Qo'shimcha: Eshik ochiq bo'lsa, bog'langan userlarga Telegram xabar yuborish ====
-		if (data.doorChk === 1) {
-			// 1 -> eshik ochildi deb faraz qilamiz
-			await notifyUsersOfOpenDoor(data.doorNum)
-		}
+		// if (data.doorChk === 1) {
+		// 	// 1 -> eshik ochildi deb faraz qilamiz
+		// 	await notifyUsersOfOpenDoor(data.doorNum)
+		// }
 	} else if (topic.startsWith(gwResTopic)) {
 		console.log('Gateway-creation event:', data)
 		emitGwRes(data)

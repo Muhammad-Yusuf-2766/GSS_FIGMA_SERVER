@@ -50,6 +50,10 @@ const buildingSchema = new mongoose.Schema({
 		default: null,
 		ref: 'Client',
 	},
+	nodes_position_file: {
+		type: String,
+		default: '',
+	},
 })
 
 // ===  Bu qator bitta documentda quyidagi keylarning valulari bir xil bo'lmasligi uchun. shu 3 ta keyning value lari oldin kiritilgan va yana bir xil value lar kiritlib saqlansa xatolik beradi.
