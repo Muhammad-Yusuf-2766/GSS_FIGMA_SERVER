@@ -16,7 +16,7 @@ class FileService {
 				fs.mkdirSync(staticDir, { recursive: true })
 			}
 
-			file.mv(filePath)
+			file.mv(filePath, () => console.log('Fayl saqlandi.'))
 			return fileName
 		} catch (error) {
 			throw new Error(`Error on saving file: ${error.message}`)
