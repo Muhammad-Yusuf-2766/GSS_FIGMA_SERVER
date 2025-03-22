@@ -94,6 +94,26 @@ productController.getActiveNodes = async (req, res) => {
 		res.json({ state: 'fail', message: error.message })
 	}
 }
+productController.downloadNodeHistory = async (req, res) => {
+	try {
+		console.log('request: downloadNodeHistory')
+		const { buildingId } = req.query
+		const productService = new ProductService()
+		const buffer = await productService.downloadNodeHistoryData(buildingId)
+		res.setHeader(
+			'Content-Disposition',
+			'attachment; filename="building-nodes-history.xlsx"'
+		)
+		res.setHeader(
+			'Content-Type',
+			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+		)
+		res.status(200).send(buffer)
+	} catch (error) {
+		console.error('Error generating Excel:', error)
+		res.json({ state: 'fail', message: error.message })
+	}
+}
 
 // =============================== Product changing logic ================================== //
 

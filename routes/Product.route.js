@@ -10,6 +10,10 @@ product_router.get('/get-gateways', productController.getGateways)
 product_router.get('/get-active-gateways', productController.getActiveGateways)
 product_router.get('/get-nodes', productController.getNodes)
 product_router.get('/get-active-nodes', productController.getActiveNodes)
+product_router.get(
+	'/download-nodes-history',
+	productController.downloadNodeHistory
+)
 
 // =============================== Product changing endpoints ================================== //
 product_router.post('/update-product', productController.updateProductStatus)
