@@ -15,7 +15,8 @@ const NodeHistorySchema = new mongoose.Schema({
 	},
 	betChk: {
 		type: Number,
-		required: true,
+		required: false,
+		default: 0,
 	},
 	betChk_2: {
 		type: Number,

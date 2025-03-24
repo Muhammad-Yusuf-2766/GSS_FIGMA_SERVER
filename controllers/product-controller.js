@@ -1,7 +1,6 @@
 const ProductService = require('../services/product.service')
 const path = require('path')
 const fs = require('fs')
-const fileService = require('../services/file.service')
 
 let productController = module.exports
 

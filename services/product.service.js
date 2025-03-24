@@ -4,7 +4,6 @@ const GatewaySchema = require('../schema/Gateway.model')
 const BuildingSchema = require('../schema/Building.model')
 const { mqttClient, mqttEmitter } = require('./Mqtt.service')
 const fileService = require('./file.service')
-const ExcelJS = require('exceljs')
 
 class ProductService {
 	constructor() {
