@@ -39,41 +39,57 @@ mqttClient.on('connect', () => {
 
 mqttClient.removeAllListeners('message')
 mqttClient.on('message', async (topic, message) => {
-	const data = JSON.parse(message.toString())
-	const serialNumber = topic.split('/').pop().slice(-4) // Mavzudan UUID ni olish
-	console.log(`MQTT_data ${serialNumber}: ${message}`)
+	try {
+		const data = JSON.parse(message.toString())
+		const serialNumber = topic.split('/').pop().slice(-4) // Mavzudan UUID ni olish
+		console.log(`MQTT_data ${serialNumber}: ${message}`)
 
-	if (topic.startsWith(Topic)) {
-		const eventData = {
-			gw_number: serialNumber,
-			doorNum: data.doorNum,
-			doorChk: data.doorChk,
-			betChk: data.betChk,
+		if (topic.startsWith(Topic)) {
+			const eventData = {
+				gw_number: serialNumber,
+				doorNum: data.doorNum,
+				doorChk: data.doorChk,
+				betChk: data.betChk,
+			}
+
+			const updateData = {
+				doorChk: data.doorChk,
+				betChk: data.betChk,
+				...(data.betChk_2 !== undefined && { betChk_2: data.betChk_2 }),
+			}
+
+			const updatedNode = await NodeSchema.findOneAndUpdate(
+				{ doorNum: data.doorNum },
+				{ $set: updateData },
+				{ new: true }
+			)
+
+			if (!updatedNode) {
+				console.warn('Node topilmadi:', data.doorNum)
+				return
+			}
+
+			const mqttEventSchema = new NodeHistorySchema(eventData)
+
+			try {
+				await mqttEventSchema.save()
+			} catch (err) {
+				console.warn('NodeHistorySchema saqlashda xatolik:', err.message)
+				return
+			}
+
+			mqttEmitter.emit('mqttMessage', updatedNode)
+
+			// Eshik ochilganini tekshirish (faollashtirish uchun uncomment qil)
+			if (data.doorChk === 1) {
+				await notifyUsersOfOpenDoor(data.doorNum)
+			}
+		} else if (topic.startsWith(gwResTopic)) {
+			console.log('Gateway-creation event:', data)
+			emitGwRes(data)
 		}
-
-		const updateData = {
-			doorChk: data.doorChk,
-			betChk: data.betChk,
-			...(data.betChk_2 !== undefined && { betChk_2: data.betChk_2 }),
-		}
-		const updatedNode = await NodeSchema.findOneAndUpdate(
-			{ doorNum: data.doorNum },
-			{ $set: updateData },
-			{ new: true }
-		)
-
-		const mqttEventSchema = new NodeHistorySchema(eventData)
-		await mqttEventSchema.save()
-		mqttEmitter.emit('mqttMessage', updatedNode)
-
-		// ==== Qo'shimcha: Eshik ochiq bo'lsa, bog'langan userlarga Telegram xabar yuborish ====
-		if (data.doorChk === 1) {
-			// 1 -> eshik ochildi deb faraz qilamiz
-			await notifyUsersOfOpenDoor(data.doorNum)
-		}
-	} else if (topic.startsWith(gwResTopic)) {
-		console.log('Gateway-creation event:', data)
-		emitGwRes(data)
+	} catch (err) {
+		console.error('MQTT xabarda xatolik:', err.message)
 	}
 })
 
