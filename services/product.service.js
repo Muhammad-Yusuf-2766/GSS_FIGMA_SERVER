@@ -90,7 +90,7 @@ class ProductService {
 					// Javob kutilayotgan vaqtda taymer qo'shing
 					setTimeout(() => {
 						reject(new Error('MQTT response timeout'))
-					}, 5000) // Masalan, 5 soniya kutish
+					}, 10000) // Masalan, 5 soniya kutish
 				})
 
 				await mqttResponsePromise

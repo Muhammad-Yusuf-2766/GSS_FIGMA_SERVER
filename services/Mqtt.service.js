@@ -10,8 +10,10 @@ const mqttEmitter = new EventEmitter()
 const nodeTopic = [
 	'GSSIOT/01030369081/GATE_PUB/+',
 	'GSSIOT/01030369081/GATE_RES/+',
+	'GSSIOT/01030369081/GATE_ANG/+',
 ]
 const Topic = 'GSSIOT/01030369081/GATE_PUB/'
+const angleTopic = 'GSSIOT/01030369081/GATE_ANG/'
 const gwResTopic = 'GSSIOT/01030369081/GATE_RES/'
 
 let isMessageListenerAdded = false // Listenerning qo'shilganligini tekshirish uchun flag
@@ -80,13 +82,15 @@ mqttClient.on('message', async (topic, message) => {
 
 			mqttEmitter.emit('mqttMessage', updatedNode)
 
-			// Eshik ochilganini tekshirish (faollashtirish uchun uncomment qil)
+			// Eshik ochilganda TELEGRAM ga message sending (uncomment to activate function)
 			if (data.doorChk === 1) {
 				await notifyUsersOfOpenDoor(data.doorNum)
 			}
 		} else if (topic.startsWith(gwResTopic)) {
 			console.log('Gateway-creation event:', data)
 			emitGwRes(data)
+		} else if (topic.startsWith(angleTopic)) {
+			console.log('MPU-6500 sensor data:', data)
 		}
 	} catch (err) {
 		console.error('MQTT xabarda xatolik:', err.message)
