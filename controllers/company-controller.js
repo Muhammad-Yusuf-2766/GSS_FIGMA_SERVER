@@ -31,6 +31,18 @@ companyController.getActiveBuildings = async (req, res) => {
 	}
 }
 
+companyController.getBuildings = async (req, res) => {
+	try {
+		console.log('request: getBuildings')
+		const companyService = new CompanyService()
+		const buildings = await companyService.getBuildingsData()
+		res.json({ state: 'succcess', buildings: buildings })
+	} catch (error) {
+		console.log(error.message)
+		res.json({ state: 'fail', message: error.message })
+	}
+}
+
 companyController.createClient = async (req, res) => {
 	try {
 		console.log('request: createClient')

@@ -81,6 +81,18 @@ class CompanyService {
 		}
 	}
 
+	async getBuildingsData() {
+		try {
+			const buildings = await this.buildingSchema.find()
+			if (!buildings || buildings.length == 0) {
+				return []
+			}
+			return buildings
+		} catch (error) {
+			throw error
+		}
+	}
+
 	async createClientData(data) {
 		try {
 			// Transactionni boshlash

@@ -3,6 +3,8 @@ const NodeHistorySchema = require('../schema/History.model')
 const NodeSchema = require('../schema/Node.model')
 const EventEmitter = require('events')
 const { notifyUsersOfOpenDoor } = require('../services/Telegrambot.service')
+const AngleNodeHistory = require('../schema/Angle.node.history.model')
+const AngleNodeSchema = require('../schema/Angle.node.model')
 
 // Xabarlarni tarqatish uchun EventEmitter
 const mqttEmitter = new EventEmitter()
@@ -43,12 +45,13 @@ mqttClient.removeAllListeners('message')
 mqttClient.on('message', async (topic, message) => {
 	try {
 		const data = JSON.parse(message.toString())
-		const serialNumber = topic.split('/').pop().slice(-4) // Mavzudan UUID ni olish
-		console.log(`MQTT_data ${serialNumber}: ${message}`)
+		const gatewayNumber = topic.split('/').pop().slice(-4) // Mavzudan UUID ni olish
+		// console.log(`MQTT_data ${gatewayNumber}: ${message}`)
 
 		if (topic.startsWith(Topic)) {
+			console.log('Door-Node mqtt message:', data)
 			const eventData = {
-				gw_number: serialNumber,
+				gw_number: gatewayNumber,
 				doorNum: data.doorNum,
 				doorChk: data.doorChk,
 				betChk: data.betChk,
@@ -87,10 +90,32 @@ mqttClient.on('message', async (topic, message) => {
 				await notifyUsersOfOpenDoor(data.doorNum)
 			}
 		} else if (topic.startsWith(gwResTopic)) {
-			console.log('Gateway-creation event:', data)
+			console.log(`Gateway-creation event gateway-${gatewayNumber}:`, data)
 			emitGwRes(data)
 		} else if (topic.startsWith(angleTopic)) {
-			console.log('MPU-6500 sensor data:', data)
+			console.log(`MPU-6500 sensor data from gateway-${gatewayNumber}:`, data)
+			const position = await AngleNodeSchema.findOne(
+				{ doorNum: data.doorNum },
+				{ position: 1 }
+			)
+			// console.log('position', position)
+
+			const historyData = {
+				gw_number: gatewayNumber,
+				doorNum: data.doorNum,
+				angle_x: data.angle_x,
+				angle_y: data.angle_y,
+			}
+			const result = await new AngleNodeHistory(historyData)
+
+			await result.save()
+			const emitData = {
+				doorNum: data.doorNum,
+				angle_x: data.angle_x,
+				angle_y: data.angle_y,
+				createdAt: new Date().toISOString(),
+			}
+			mqttEmitter.emit('mqttAngleMessage', emitData)
 		}
 	} catch (err) {
 		console.error('MQTT xabarda xatolik:', err.message)

@@ -8,6 +8,7 @@ company_router.get(
 	'/get-active-buildings',
 	companyController.getActiveBuildings
 )
+company_router.get('/get-buildings', companyController.getBuildings)
 company_router.get('/buildings/:id', companyController.getBuildingNodes)
 company_router.delete(
 	'/delete/building/:buildingId',

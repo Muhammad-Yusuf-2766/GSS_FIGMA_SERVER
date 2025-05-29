@@ -21,6 +21,16 @@ const gatewaySchema = new mongoose.Schema({
 			message: 'At least one node must be present in the nodes array',
 		},
 	},
+	angle_nodes: {
+		type: [
+			{
+				type: mongoose.Schema.ObjectId,
+				ref: 'Angle-Node',
+			},
+		],
+		required: false,
+		default: [],
+	},
 	gateway_status: {
 		type: Boolean,
 		required: false,

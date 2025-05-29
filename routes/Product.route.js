@@ -6,10 +6,15 @@ const productController = require('../controllers/product-controller')
 
 product_router.post('/create-nodes', productController.createNodes)
 product_router.post('/create-gateway', productController.createGateway)
+product_router.post('/create-angle-nodes', productController.createAngleNodes)
 product_router.get('/get-gateways', productController.getGateways)
 product_router.get('/get-active-gateways', productController.getActiveGateways)
 product_router.get('/get-nodes', productController.getNodes)
 product_router.get('/get-active-nodes', productController.getActiveNodes)
+product_router.post(
+	'/combine-angle-nodes',
+	productController.combineAngleNodeToGateway
+)
 product_router.get(
 	'/download-nodes-history',
 	productController.downloadNodeHistory
@@ -19,5 +24,8 @@ product_router.get(
 product_router.post('/update-product', productController.updateProductStatus)
 product_router.post('/delete-product', productController.deleteProduct)
 product_router.post('/set-node-position', productController.uploadXlsFile)
+
+// ========================== Angle-Node-Graphic routes ================================== //
+product_router.get('/angle-node/data', productController.angleNodeGraphicData)
 
 module.exports = product_router

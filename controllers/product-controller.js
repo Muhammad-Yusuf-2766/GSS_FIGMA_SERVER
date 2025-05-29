@@ -1,6 +1,7 @@
 const ProductService = require('../services/product.service')
 const path = require('path')
 const fs = require('fs')
+const AngleNodeHistory = require('../schema/Angle.node.history.model')
 
 let productController = module.exports
 
@@ -40,6 +41,32 @@ productController.createGateway = async (req, res) => {
 		const productService = new ProductService()
 		await productService.createGatewayData(data)
 		res.json({ state: 'succcess', message: '게이트웨이가 생성돼었읍니다' })
+	} catch (error) {
+		console.log(error.message)
+		res.json({ state: 'fail', message: error.message })
+	}
+}
+
+productController.createAngleNodes = async (req, res) => {
+	try {
+		console.log('request: createAngleNodes')
+		const angleNodes = req.body
+
+		// Ma'lumot turi array ekanligini tekshiring
+		if (!Array.isArray(angleNodes)) {
+			return res.status(400).json({
+				state: 'Failed',
+				message: 'Invalid data format. Expected an array.',
+			})
+		}
+
+		const productService = new ProductService()
+
+		const createdNodes = await productService.createAngleNodesData(angleNodes)
+		res.json({
+			state: 'succcess',
+			message: `${createdNodes.length} angle nodes created successfully!`,
+		})
 	} catch (error) {
 		console.log(error.message)
 		res.json({ state: 'fail', message: error.message })
@@ -93,6 +120,7 @@ productController.getActiveNodes = async (req, res) => {
 		res.json({ state: 'fail', message: error.message })
 	}
 }
+
 productController.downloadNodeHistory = async (req, res) => {
 	try {
 		console.log('request: downloadNodeHistory')
@@ -110,6 +138,22 @@ productController.downloadNodeHistory = async (req, res) => {
 		res.status(200).send(buffer)
 	} catch (error) {
 		console.error('Error generating Excel:', error)
+		res.json({ state: 'fail', message: error.message })
+	}
+}
+
+productController.combineAngleNodeToGateway = async (req, res) => {
+	try {
+		console.log('request: combineAngleNodeToGateway:')
+		const data = req.body
+		const productService = new ProductService()
+		await productService.combineAngleNodeToGatewayData(data)
+		res.json({
+			state: 'succcess',
+			message: '비계전도 노드가 게이트웨이에 속했습니다다',
+		})
+	} catch (error) {
+		console.log(error.message)
 		res.json({ state: 'fail', message: error.message })
 	}
 }
@@ -249,5 +293,31 @@ productController.uploadXlsFile = async (req, res) => {
 	} catch (error) {
 		console.error(error)
 		res.json({ error: 'Serverda xatolik yuz berdi', error: error })
+	}
+}
+
+// ========================== Angle-Node-Graphic routes ================================== //
+productController.angleNodeGraphicData = async (req, res) => {
+	console.log('request: angleNodeGraphicData')
+
+	try {
+		const { doorNum, from, to } = req.query
+
+		if (!doorNum || !from || !to) {
+			return res.status(400).json({ message: 'doorNum, from, to required' })
+		}
+
+		const data = await AngleNodeHistory.find({
+			doorNum: parseInt(doorNum),
+			createdAt: {
+				$gte: new Date(from),
+				$lte: new Date(to),
+			},
+		}).sort({ createdAt: 1 })
+
+		res.json(data)
+	} catch (err) {
+		console.error('Error fetching data:', err)
+		res.status(500).json({ message: 'Server error' })
 	}
 }

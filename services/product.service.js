@@ -4,6 +4,7 @@ const GatewaySchema = require('../schema/Gateway.model')
 const BuildingSchema = require('../schema/Building.model')
 const { mqttClient, mqttEmitter } = require('./Mqtt.service')
 const fileService = require('./file.service')
+const AngleNodeSchema = require('../schema/Angle.node.model')
 
 class ProductService {
 	constructor() {
@@ -11,11 +12,12 @@ class ProductService {
 		this.gatewaySchema = GatewaySchema
 		this.buildingSchema = BuildingSchema
 		this.nodeHistorySchema = NodeHistorySchema
+		this.angleNodeSchema = AngleNodeSchema
 	}
 
 	// =============================== Product creating & geting logics ================================== //
 
-	async createNodesData(dataArray) {
+	async createNodesData(arrayData) {
 		try {
 			const existNodes = await this.nodeSchema.find({
 				doorNum: { $in: dataArray.map(data => data.doorNum) },
@@ -28,6 +30,25 @@ class ProductService {
 			}
 
 			const result = await this.nodeSchema.insertMany(dataArray)
+			return result
+		} catch (error) {
+			throw new Error(`Error: ${error.message}`)
+		}
+	}
+
+	async createAngleNodesData(arrayData) {
+		try {
+			const existNodes = await this.angleNodeSchema.find({
+				doorNum: { $in: arrayData.map(data => data.doorNum) },
+			})
+			if (existNodes.length > 0) {
+				const existNodeNums = existNodes.map(node => node.doorNum)
+				throw new Error(
+					`노드 번호가 ${existNodeNums.join(',')}인 기존 노드가 있습니다 !`
+				)
+			}
+
+			const result = await this.angleNodeSchema.insertMany(arrayData)
 			return result
 		} catch (error) {
 			throw new Error(`Error: ${error.message}`)
@@ -59,6 +80,7 @@ class ProductService {
 
 			const publishData = {
 				cmd: 2,
+				nodeType: 0,
 				numNodes: nodes.length,
 				nodes: nodes.map(node => node.doorNum),
 			}
@@ -104,6 +126,87 @@ class ProductService {
 			)
 			const result = await gateway.save()
 			return result
+		} catch (error) {
+			throw new Error(`Error on creating-gateway: ${error.message}`)
+		}
+	}
+
+	async combineAngleNodeToGatewayData(data) {
+		try {
+			// exsting gateway checkng logic
+			const existGateway = await this.gatewaySchema.findOne({
+				serial_number: data.serial_number,
+			})
+			if (!existGateway) {
+				throw new Error(
+					`일련 번호가 ${existGateway.serial_number}인 게이트웨이가 없습니다. 먼저 게이트웨이를 생성하세요`
+				)
+			}
+
+			// gateway Mqtt publish logic
+			const gw_number = data.serial_number
+			const nodesId = data.nodes
+			const nodes = await this.angleNodeSchema.find(
+				{ _id: { $in: nodesId } },
+				{ doorNum: 1, _id: 1 }
+			)
+
+			let topic = `GSSIOT/01030369081/GATE_SUB/GRM22JU22P${gw_number}`
+
+			const publishData = {
+				cmd: 2,
+				nodeType: 1,
+				numNodes: nodes.length,
+				nodes: nodes.map(node => node.doorNum),
+			}
+			console.log('Publish-data:', publishData, topic)
+
+			// 3. MQTT serverga muvaffaqiyatli yuborilishini tekshirish
+			if (mqttClient.connected) {
+				const publishPromise = new Promise((resolve, reject) => {
+					mqttClient.publish(topic, JSON.stringify(publishData), err => {
+						if (err) {
+							reject(
+								new Error(
+									`MQTT publishing failed for Angle-node topic: ${topic}`
+								)
+							)
+						} else {
+							resolve(true)
+						}
+					})
+				})
+				// Publish'ning natijasini kutamiz
+				await publishPromise
+
+				const mqttResponsePromise = new Promise((resolve, reject) => {
+					mqttEmitter.once('gwPubRes', data => {
+						if (data.resp === 'success') {
+							resolve(true)
+						} else {
+							reject(
+								new Error('Failed publishing for Angle-node gateway to mqtt')
+							)
+						}
+					})
+
+					// Javob kutilayotgan vaqtda taymer qo'shing
+					setTimeout(() => {
+						reject(new Error('MQTT response timeout'))
+					}, 10000) // Masalan, 5 soniya kutish
+				})
+
+				await mqttResponsePromise
+			} else {
+				throw new Error('MQTT client is not connected')
+			}
+
+			const angle_nodes = await this.angleNodeSchema.updateMany(
+				{ _id: { $in: nodesId } },
+				{ $set: { node_status: false, gateway_id: existGateway._id } }
+			)
+
+			return angle_nodes
 		} catch (error) {
 			throw new Error(`Error on creating-gateway: ${error.message}`)
 		}
@@ -190,8 +293,50 @@ class ProductService {
 				throw new Error('History is not found')
 			}
 
+			// 2. doorNum bo‘yicha guruhlab, doorChk = 1 bo‘lganlar sonini hisoblash
+			const doorStats = {} // { doorNum: countOfDoorChk1 }
+
+			// Har bir entryni tekshiramiz
+			history.forEach(entry => {
+				if (entry.doorChk === 1) {
+					if (!doorStats[entry.doorNum]) {
+						// Agar birinchi marta uchrasa, yangi object ochamiz
+						doorStats[entry.doorNum] = {
+							doorOpen_count: 1,
+							gw_number: entry.gw_number,
+							last_open: entry.createdAt,
+						}
+					} else {
+						// Bor bo'lsa, countni oshiramiz
+						doorStats[entry.doorNum].doorOpen_count++
+						// Sana solishtirib eng oxirgisini olamiz
+						if (
+							new Date(entry.createdAt) >
+							new Date(doorStats[entry.doorNum].last_open)
+						) {
+							doorStats[entry.doorNum].last_open = entry.createdAt
+						}
+					}
+				}
+			})
+
+			// Objectni massivga aylantiramiz
+			const result = Object.entries(doorStats).map(([doorNum, data]) => {
+				const lastOpenDate =
+					typeof data.last_open === 'string'
+						? data.last_open
+						: new Date(data.last_open).toISOString()
+
+				return {
+					doorNum: Number(doorNum),
+					doorOpen_count: data.doorOpen_count,
+					gw_number: data.gw_number,
+					last_open: lastOpenDate.substring(0, 10),
+				}
+			})
+
 			// ✅ createExcelFile funksiyasini chaqirish
-			const buffer = await this.createExcelFile(history)
+			const buffer = await this.createExcelFile(result)
 			return buffer
 		} catch (error) {
 			console.error('Error generating Excel:', error)
@@ -200,20 +345,17 @@ class ProductService {
 	}
 
 	// ✅ Excel fayl yaratish funksiyasi
-	async createExcelFile(history) {
+	async createExcelFile(reportArr) {
 		const ExcelJS = require('exceljs')
 		const workbook = new ExcelJS.Workbook()
 		const worksheet = workbook.addWorksheet('MQTT Data')
 
 		// ✅ Sarlavhalarni qo'shish
 		worksheet.columns = [
-			{ header: '내역 ID', key: '_id', width: 35 },
-			{ header: '노드 넘버', key: 'doorNum', width: 15 },
+			{ header: '노드 넘버', key: 'doorNum', width: 25 },
 			{ header: '노드 속한 게이트웨이 넘버', key: 'gw_number', width: 35 },
-			{ header: '문상태', key: 'doorChk', width: 15 },
-			{ header: '뱉터리-3v', key: 'betChk', width: 15 },
-			{ header: '뱉터리-12v', key: 'betChk_2', width: 15 },
-			{ header: '생성된 시간', key: 'createdAt', width: 20 },
+			{ header: '문 열림 횟수', key: 'doorOpen_count', width: 25 },
+			{ header: '마지막 열림 날짜', key: 'last_open', width: 25 },
 		]
 
 		// ✅ Header'ni stil qilish
@@ -236,17 +378,15 @@ class ProductService {
 		})
 
 		// ✅ Ma'lumotlarni qo'shish
-		history.forEach(item => {
+		reportArr.forEach(item => {
 			const row = worksheet.addRow({
-				_id: item._id,
 				gw_number: item.gw_number,
 				doorNum: item.doorNum,
-				doorChk: item.doorChk === 1 ? '열림' : '닫힘',
-				betChk: item.betChk,
-				betChk_2: item.betChk_2,
-				createdAt: new Date(item.createdAt),
+				doorOpen_count: item.doorOpen_count,
+				last_open: item.last_open,
 			})
 
+			row.height = 35
 			row.eachCell({ includeEmpty: true }, cell => {
 				cell.alignment = { horizontal: 'center', vertical: 'middle' }
 				cell.border = {
@@ -255,29 +395,33 @@ class ProductService {
 					bottom: { style: 'thin' },
 					right: { style: 'thin' },
 				}
+				cell.font = {
+					size: 14, // 📢 Mana shu yerda font kattalashtiriladi (masalan, 14px)
+					bold: false, // optional: qalin qilmoqchi bo'lsangiz true qiling
+				}
 			})
 
-			// ✅ 🔥 `doorChk` uchun rang berish
-			const doorChkCell = row.getCell('doorChk')
-			if (item.doorChk === 1) {
-				// 열림 -> och qizil
-				doorChkCell.fill = {
+			// ✅ 🔥 `doorOpen_count` uchun rang berish
+			const doorOpen_count = row.getCell('doorOpen_count')
+			if (item.doorOpen_count >= 100) {
+				doorOpen_count.fill = {
 					type: 'pattern',
 					pattern: 'solid',
-					fgColor: { argb: 'F05656' }, //rgb(240, 86, 86)
+					fgColor: { argb: 'ffDB5555' }, //rgb(219, 85, 85)
+				}
+				doorOpen_count.font = {
+					color: { argb: 'FFFFFFFF' }, // ❗️ Oq matn (FF FF FF)
+					size: 14,
+					bold: true, // optional: qalin qilish uchun
 				}
 			} else {
-				// 닫힘 -> och havorang
-				doorChkCell.fill = {
+				doorOpen_count.fill = {
 					type: 'pattern',
 					pattern: 'solid',
 					fgColor: { argb: '69B5F7' }, //rgb(105, 181, 247)
 				}
 			}
 		})
-
-		// ✅ createdAt ustunini formatlash
-		worksheet.getColumn('createdAt').numFmt = 'yyyy-mm-dd hh:mm'
 
 		// ✅ Buffer formatiga o‘girish
 		const buffer = await workbook.xlsx.writeBuffer()

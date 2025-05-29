@@ -10,7 +10,7 @@ const returnGateway = async gateway_id => {
 
 const setupSocket = serverIo => {
 	io = serverIo
-
+	// ============ NODES MQTT data delivering field ========== //
 	mqttEmitter.on('mqttMessage', async updatedNode => {
 		const { gateway_id } = updatedNode
 		const gateway = await returnGateway(gateway_id)
@@ -19,6 +19,13 @@ const setupSocket = serverIo => {
 			const topic = `mqtt/building/${buildingId}`
 			io.emit(topic, updatedNode)
 		}
+	})
+
+	// ============ 비계전도 MQTT data delivering field ========== //
+	mqttEmitter.on('mqttAngleMessage', async newdAngleData => {
+		// const buildingId = gateway.building_id
+		const topic = `angle-data`
+		io.emit(topic, newdAngleData)
 	})
 
 	io.on('connection', socket => {
