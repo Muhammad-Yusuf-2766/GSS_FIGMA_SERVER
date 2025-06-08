@@ -93,7 +93,36 @@ productController.getActiveGateways = async (req, res) => {
 		res.json({ state: 'succcess', gateways: gateways })
 	} catch (error) {
 		console.log(error.message)
-		res.json({ state: 'Fail', message: error.message })
+		res.json({ state: 'fail', message: error.message })
+	}
+}
+
+productController.getSingleGateway = async (req, res) => {
+	try {
+		console.log('request: getSingleGateway')
+		const { number } = req.params
+
+		const productService = new ProductService()
+		const gateway = await productService.getSingleGatewayData(number)
+
+		if (!gateway) {
+			return res.status(404).json({
+				state: 'Fail',
+				message: '게이트웨이가 없읍니다,다른거 확인해보세요!',
+			})
+		}
+
+		res.status(200).json({
+			state: 'success',
+			gateway,
+		})
+	} catch (error) {
+		console.error('Xatolik:', error.message)
+		res.status(500).json({
+			state: 'fail',
+			message: 'Internal Server error',
+			detail: error.message,
+		})
 	}
 }
 
@@ -118,6 +147,33 @@ productController.getActiveNodes = async (req, res) => {
 	} catch (error) {
 		console.log(error.message)
 		res.json({ state: 'fail', message: error.message })
+	}
+}
+
+productController.getActiveAngleNodes = async (req, res) => {
+	try {
+		console.log('request: getActiveAngleNodes')
+		const productService = new ProductService()
+		const angleNodes = await productService.getActiveAngleNodesData()
+
+		if (!angleNodes) {
+			return res.status(404).json({
+				state: 'fail',
+				message: '동작 가능한 비계전도 노드가 없습니다.',
+			})
+		}
+
+		res.status(200).json({
+			state: 'success',
+			angle_nodes: angleNodes,
+		})
+	} catch (error) {
+		console.error('Error:', error.message)
+		res.status(500).json({
+			state: 'fail',
+			message: 'Internal Server error',
+			detail: error.message,
+		})
 	}
 }
 

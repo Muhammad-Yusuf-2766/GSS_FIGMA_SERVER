@@ -116,6 +116,30 @@ companyController.getBuildingNodes = async (req, res) => {
 	}
 }
 
+companyController.getBuildingAngleNodes = async (req, res) => {
+	try {
+		console.log('request: getBuildingAngleNodes')
+
+		const { id } = req.params
+		const companyService = new CompanyService()
+
+		const result = await companyService.getBuildingAngleNodesData(id)
+
+		if (!result || !result.building || !result.angleNodes) {
+			throw new Error('No building or nodes found')
+		}
+
+		res.json({
+			state: 'success',
+			building: result.building,
+			angle_nodes: result.angleNodes,
+		})
+	} catch (error) {
+		console.error('Error on getBuildingAngleNodes:', error.message)
+		res.status(400).json({ state: 'fail', message: error.message })
+	}
+}
+
 companyController.deleteCompany = async (req, res) => {
 	try {
 		console.log('request: deleteCompany')

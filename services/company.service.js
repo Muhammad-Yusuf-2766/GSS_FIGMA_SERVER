@@ -2,6 +2,7 @@ const ClientSchema = require('../schema/Company.model')
 const GatewaySchema = require('../schema/Gateway.model')
 const BuildingSchema = require('../schema/Building.model')
 const NodeSchema = require('../schema/Node.model')
+const AngleNodeSchema = require('../schema/Angle.node.model')
 
 class CompanyService {
 	constructor() {
@@ -9,6 +10,7 @@ class CompanyService {
 		this.gatewaySchema = GatewaySchema
 		this.buildingSchema = BuildingSchema
 		this.nodeSchema = NodeSchema
+		this.angleNodeSchema = AngleNodeSchema
 	}
 
 	async createBuildingData(data) {
@@ -207,6 +209,44 @@ class CompanyService {
 		} catch (error) {
 			// Errorni ushlash
 			console.error('Error in getBuildingNodesData:', error.message)
+			throw error // Asl xatoni qaytaramiz
+		}
+	}
+
+	async getBuildingAngleNodesData(buildingId) {
+		try {
+			const gateways = await this.gatewaySchema.find({
+				building_id: buildingId,
+			})
+
+			if (!gateways.length) {
+				throw new Error('No gateways found for this building')
+			}
+
+			const gatewayIds = gateways.map(gateway => gateway._id)
+			console.log(gatewayIds)
+
+			const angleNodes = await this.angleNodeSchema
+				.find({
+					gateway_id: { $in: gatewayIds },
+				})
+				.sort({ doorNum: 1 })
+
+			const building = await this.buildingSchema.findOne({ _id: buildingId })
+
+			if (!building) {
+				console.log(angleNodes)
+				throw new Error('Building not found')
+			}
+			if (!angleNodes || angleNodes.length === 0) {
+				console.log(angleNodes)
+				throw new Error('No nodes found for this building')
+			}
+
+			return { building, angleNodes }
+		} catch (error) {
+			// Errorni ushlash
+			console.error('Error on getBuildingNodesData:', error.message)
 			throw error // Asl xatoni qaytaramiz
 		}
 	}

@@ -20,25 +20,6 @@ class ProductService {
 	async createNodesData(arrayData) {
 		try {
 			const existNodes = await this.nodeSchema.find({
-				doorNum: { $in: dataArray.map(data => data.doorNum) },
-			})
-			if (existNodes.length > 0) {
-				const existNodeNums = existNodes.map(node => node.doorNum)
-				throw new Error(
-					`노드 번호가 ${existNodeNums.join(',')}인 기존 노드가 있습니다 !`
-				)
-			}
-
-			const result = await this.nodeSchema.insertMany(dataArray)
-			return result
-		} catch (error) {
-			throw new Error(`Error: ${error.message}`)
-		}
-	}
-
-	async createAngleNodesData(arrayData) {
-		try {
-			const existNodes = await this.angleNodeSchema.find({
 				doorNum: { $in: arrayData.map(data => data.doorNum) },
 			})
 			if (existNodes.length > 0) {
@@ -48,7 +29,29 @@ class ProductService {
 				)
 			}
 
-			const result = await this.angleNodeSchema.insertMany(arrayData)
+			const result = await this.nodeSchema.insertMany(arrayData)
+			return result
+		} catch (error) {
+			throw new Error(`Error: ${error.message}`)
+		}
+	}
+
+	async createAngleNodesData(arrayData) {
+		try {
+			const existNodes = await this.angleNodeSchema.find({
+				doorNum: { $in: arrayData.map(doorNum => doorNum) },
+			})
+			if (existNodes.length > 0) {
+				const existNodeNums = existNodes.map(node => node.doorNum)
+				throw new Error(
+					`노드 번호가 ${existNodeNums.join(',')}인 기존 노드가 있습니다 !`
+				)
+			}
+			const arrayObject = arrayData.map(doorNum => ({
+				doorNum,
+			}))
+
+			const result = await this.angleNodeSchema.insertMany(arrayObject)
 			return result
 		} catch (error) {
 			throw new Error(`Error: ${error.message}`)
@@ -135,7 +138,7 @@ class ProductService {
 		try {
 			// exsting gateway checkng logic
 			const existGateway = await this.gatewaySchema.findOne({
-				serial_number: data.serial_number,
+				_id: data.gateway_id,
 			})
 			if (!existGateway) {
 				throw new Error(
@@ -145,7 +148,7 @@ class ProductService {
 
 			// gateway Mqtt publish logic
 			const gw_number = data.serial_number
-			const nodesId = data.nodes
+			const nodesId = data.angle_nodes
 			const nodes = await this.angleNodeSchema.find(
 				{ _id: { $in: nodesId } },
 				{ doorNum: 1, _id: 1 }
@@ -162,49 +165,51 @@ class ProductService {
 			console.log('Publish-data:', publishData, topic)
 
 			// 3. MQTT serverga muvaffaqiyatli yuborilishini tekshirish
-			if (mqttClient.connected) {
-				const publishPromise = new Promise((resolve, reject) => {
-					mqttClient.publish(topic, JSON.stringify(publishData), err => {
-						if (err) {
-							reject(
-								new Error(
-									`MQTT publishing failed for Angle-node topic: ${topic}`
-								)
-							)
-						} else {
-							resolve(true)
-						}
-					})
-				})
-				// Publish'ning natijasini kutamiz
-				await publishPromise
+			// if (mqttClient.connected) {
+			// 	const publishPromise = new Promise((resolve, reject) => {
+			// 		mqttClient.publish(topic, JSON.stringify(publishData), err => {
+			// 			if (err) {
+			// 				reject(
+			// 					new Error(
+			// 						`MQTT publishing failed for Angle-node topic: ${topic}`
+			// 					)
+			// 				)
+			// 			} else {
+			// 				resolve(true)
+			// 			}
+			// 		})
+			// 	})
+			// 	// Publish'ning natijasini kutamiz
+			// 	await publishPromise
 
-				const mqttResponsePromise = new Promise((resolve, reject) => {
-					mqttEmitter.once('gwPubRes', data => {
-						if (data.resp === 'success') {
-							resolve(true)
-						} else {
-							reject(
-								new Error('Failed publishing for Angle-node gateway to mqtt')
-							)
-						}
-					})
+			// 	const mqttResponsePromise = new Promise((resolve, reject) => {
+			// 		mqttEmitter.once('gwPubRes', data => {
+			// 			if (data.resp === 'success') {
+			// 				resolve(true)
+			// 			} else {
+			// 				reject(
+			// 					new Error('Failed publishing for Angle-node gateway to mqtt')
+			// 				)
+			// 			}
+			// 		})
 
-					// Javob kutilayotgan vaqtda taymer qo'shing
-					setTimeout(() => {
-						reject(new Error('MQTT response timeout'))
-					}, 10000) // Masalan, 5 soniya kutish
-				})
+			// 		// Javob kutilayotgan vaqtda taymer qo'shing
+			// 		setTimeout(() => {
+			// 			reject(new Error('MQTT response timeout'))
+			// 		}, 10000) // Masalan, 10 soniya kutish
+			// 	})
 
-				await mqttResponsePromise
-			} else {
-				throw new Error('MQTT client is not connected')
-			}
+			// 	await mqttResponsePromise
+			// } else {
+			// 	throw new Error('MQTT client is not connected')
+			// }
 
 			const angle_nodes = await this.angleNodeSchema.updateMany(
 				{ _id: { $in: nodesId } },
 				{ $set: { node_status: false, gateway_id: existGateway._id } }
 			)
+
+			await existGateway.updateOne({ $set: { angle_nodes: nodesId } })
 
 			return angle_nodes
 		} catch (error) {
@@ -236,6 +241,18 @@ class ProductService {
 		}
 	}
 
+	async getSingleGatewayData(gatewayNumber) {
+		try {
+			const gateway = await this.gatewaySchema.findOne({
+				serial_number: gatewayNumber,
+			})
+
+			return gateway || null // agar topilmasa, null qaytadi
+		} catch (error) {
+			throw new Error(`Gateway olishda xatolik: ${error.message}`)
+		}
+	}
+
 	async getNodesData() {
 		try {
 			const nodes = await this.nodeSchema.find()
@@ -257,6 +274,16 @@ class ProductService {
 			return nodes
 		} catch (error) {
 			throw error
+		}
+	}
+
+	async getActiveAngleNodesData() {
+		try {
+			const angleNodes = await this.angleNodeSchema.find({ node_status: true })
+
+			return angleNodes || null // agar topilmasa, null qaytadi
+		} catch (error) {
+			throw new Error(`Error on getting Angle-Nodes: ${error.message}`)
 		}
 	}
 

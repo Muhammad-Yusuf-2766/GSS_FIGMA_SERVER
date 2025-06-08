@@ -10,6 +10,10 @@ company_router.get(
 )
 company_router.get('/get-buildings', companyController.getBuildings)
 company_router.get('/buildings/:id', companyController.getBuildingNodes)
+company_router.get(
+	'/buildings/:id/angle-nodes',
+	companyController.getBuildingAngleNodes
+)
 company_router.delete(
 	'/delete/building/:buildingId',
 	companyController.deleteBuilding

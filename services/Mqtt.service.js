@@ -86,9 +86,9 @@ mqttClient.on('message', async (topic, message) => {
 			mqttEmitter.emit('mqttMessage', updatedNode)
 
 			// Eshik ochilganda TELEGRAM ga message sending (uncomment to activate function)
-			if (data.doorChk === 1) {
-				await notifyUsersOfOpenDoor(data.doorNum)
-			}
+			// if (data.doorChk === 1) {
+			// 	await notifyUsersOfOpenDoor(data.doorNum)
+			// }
 		} else if (topic.startsWith(gwResTopic)) {
 			console.log(`Gateway-creation event gateway-${gatewayNumber}:`, data)
 			emitGwRes(data)
