@@ -39,7 +39,7 @@ class ProductService {
 	async createAngleNodesData(arrayData) {
 		try {
 			const existNodes = await this.angleNodeSchema.find({
-				doorNum: { $in: arrayData.map(doorNum => doorNum) },
+				doorNum: { $in: arrayData.map(obj => obj.doorNum) },
 			})
 			if (existNodes.length > 0) {
 				const existNodeNums = existNodes.map(node => node.doorNum)
@@ -47,7 +47,7 @@ class ProductService {
 					`노드 번호가 ${existNodeNums.join(',')}인 기존 노드가 있습니다 !`
 				)
 			}
-			const arrayObject = arrayData.map(doorNum => ({
+			const arrayObject = arrayData.map(({ doorNum }) => ({
 				doorNum,
 			}))
 
@@ -165,44 +165,44 @@ class ProductService {
 			console.log('Publish-data:', publishData, topic)
 
 			// 3. MQTT serverga muvaffaqiyatli yuborilishini tekshirish
-			// if (mqttClient.connected) {
-			// 	const publishPromise = new Promise((resolve, reject) => {
-			// 		mqttClient.publish(topic, JSON.stringify(publishData), err => {
-			// 			if (err) {
-			// 				reject(
-			// 					new Error(
-			// 						`MQTT publishing failed for Angle-node topic: ${topic}`
-			// 					)
-			// 				)
-			// 			} else {
-			// 				resolve(true)
-			// 			}
-			// 		})
-			// 	})
-			// 	// Publish'ning natijasini kutamiz
-			// 	await publishPromise
+			if (mqttClient.connected) {
+				const publishPromise = new Promise((resolve, reject) => {
+					mqttClient.publish(topic, JSON.stringify(publishData), err => {
+						if (err) {
+							reject(
+								new Error(
+									`MQTT publishing failed for Angle-node topic: ${topic}`
+								)
+							)
+						} else {
+							resolve(true)
+						}
+					})
+				})
+				// Publish'ning natijasini kutamiz
+				await publishPromise
 
-			// 	const mqttResponsePromise = new Promise((resolve, reject) => {
-			// 		mqttEmitter.once('gwPubRes', data => {
-			// 			if (data.resp === 'success') {
-			// 				resolve(true)
-			// 			} else {
-			// 				reject(
-			// 					new Error('Failed publishing for Angle-node gateway to mqtt')
-			// 				)
-			// 			}
-			// 		})
+				const mqttResponsePromise = new Promise((resolve, reject) => {
+					mqttEmitter.once('gwPubRes', data => {
+						if (data.resp === 'success') {
+							resolve(true)
+						} else {
+							reject(
+								new Error('Failed publishing for Angle-node gateway to mqtt')
+							)
+						}
+					})
 
-			// 		// Javob kutilayotgan vaqtda taymer qo'shing
-			// 		setTimeout(() => {
-			// 			reject(new Error('MQTT response timeout'))
-			// 		}, 10000) // Masalan, 10 soniya kutish
-			// 	})
+					// Javob kutilayotgan vaqtda taymer qo'shing
+					setTimeout(() => {
+						reject(new Error('MQTT response timeout'))
+					}, 10000) // Masalan, 10 soniya kutish
+				})
 
-			// 	await mqttResponsePromise
-			// } else {
-			// 	throw new Error('MQTT client is not connected')
-			// }
+				await mqttResponsePromise
+			} else {
+				throw new Error('MQTT client is not connected')
+			}
 
 			const angle_nodes = await this.angleNodeSchema.updateMany(
 				{ _id: { $in: nodesId } },

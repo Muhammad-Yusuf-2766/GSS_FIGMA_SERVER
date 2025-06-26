@@ -47,19 +47,31 @@ mqttClient.on('message', async (topic, message) => {
 		const data = JSON.parse(message.toString())
 		const gatewayNumber = topic.split('/').pop().slice(-4) // Mavzudan UUID ni olish
 		// console.log(`MQTT_data ${gatewayNumber}: ${message}`)
+		// ====== Hozrgi vaqtni olish ======= //
+		const now = new Date()
+
+		const timeString = now.toLocaleString('ko-KR', {
+			timeZone: 'Asia/Seoul',
+			hour12: false,
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+			hour: '2-digit',
+			minute: '2-digit',
+		})
 
 		if (topic.startsWith(Topic)) {
-			console.log('Door-Node mqtt message:', data)
+			console.log('Door-Node mqtt message:', data, '|', timeString)
 			const eventData = {
 				gw_number: gatewayNumber,
 				doorNum: data.doorNum,
 				doorChk: data.doorChk,
-				betChk: data.betChk,
+				betChk: data.betChk_3,
 			}
 
 			const updateData = {
 				doorChk: data.doorChk,
-				betChk: data.betChk,
+				betChk: data.betChk_3,
 				...(data.betChk_2 !== undefined && { betChk_2: data.betChk_2 }),
 			}
 
@@ -86,14 +98,24 @@ mqttClient.on('message', async (topic, message) => {
 			mqttEmitter.emit('mqttMessage', updatedNode)
 
 			// Eshik ochilganda TELEGRAM ga message sending (uncomment to activate function)
-			// if (data.doorChk === 1) {
-			// 	await notifyUsersOfOpenDoor(data.doorNum)
-			// }
+			if (data.doorChk === 1) {
+				await notifyUsersOfOpenDoor(data.doorNum)
+			}
 		} else if (topic.startsWith(gwResTopic)) {
-			console.log(`Gateway-creation event gateway-${gatewayNumber}:`, data)
+			console.log(
+				`Gateway-creation event gateway-${gatewayNumber}:`,
+				data,
+				'|',
+				timeString
+			)
 			emitGwRes(data)
 		} else if (topic.startsWith(angleTopic)) {
-			console.log(`MPU-6500 sensor data from gateway-${gatewayNumber}:`, data)
+			console.log(
+				`MPU-6500 sensor data from gateway-${gatewayNumber}:`,
+				data,
+				'|',
+				timeString
+			)
 			const position = await AngleNodeSchema.findOne(
 				{ doorNum: data.doorNum },
 				{ position: 1 }

@@ -14,6 +14,10 @@ company_router.get(
 	'/buildings/:id/angle-nodes',
 	companyController.getBuildingAngleNodes
 )
+company_router.get(
+	'/buildings/:id/angle-nodes/summary',
+	companyController.getAngleNodeSummary
+)
 company_router.delete(
 	'/delete/building/:buildingId',
 	companyController.deleteBuilding
