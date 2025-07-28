@@ -23,9 +23,13 @@ const setupSocket = serverIo => {
 
 	// ============ 비계전도 MQTT data delivering field ========== //
 	mqttEmitter.on('mqttAngleMessage', async newdAngleData => {
-		// const buildingId = gateway.building_id
-		const topic = `angle-data`
-		io.emit(topic, newdAngleData)
+		const { gateway_id } = newdAngleData
+		const gateway = await returnGateway(gateway_id)
+		if (gateway) {
+			const buildingId = gateway.building_id
+			const topic = `${buildingId}_angle-nodes`
+			io.emit(topic, newdAngleData)
+		}
 	})
 
 	io.on('connection', socket => {
