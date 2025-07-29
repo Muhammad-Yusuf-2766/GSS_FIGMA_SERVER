@@ -58,6 +58,25 @@ class ProductService {
 		}
 	}
 
+	async createOfficeGatewayData(data) {
+		try {
+			const existGateway = await this.gatewaySchema.findOne({
+				serial_number: data.serial_number,
+			})
+
+			if (existGateway) {
+				throw new Error(
+					`노드 번호가 ${existGateway.serial_number} 인 기존 게이트웨이가 있습니다, 다른 넘버를 입력히세요.`
+				)
+			}
+
+			const result = await this.gatewaySchema.create(data)
+			return result
+		} catch (error) {
+			throw new Error(`${error.message}`)
+		}
+	}
+
 	async createGatewayData(data) {
 		try {
 			// exsting gateway checkng logic
@@ -87,7 +106,7 @@ class ProductService {
 				numNodes: nodes.length,
 				nodes: nodes.map(node => node.doorNum),
 			}
-			console.log('Publish-data:', publishData, topic)
+			// console.log('Publish-data:', publishData, topic)
 
 			// 3. MQTT serverga muvaffaqiyatli yuborilishini tekshirish
 			if (mqttClient.connected) {

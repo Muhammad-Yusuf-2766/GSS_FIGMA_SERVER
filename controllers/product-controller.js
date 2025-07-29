@@ -36,10 +36,28 @@ productController.createNodes = async (req, res) => {
 
 productController.createGateway = async (req, res) => {
 	try {
-		console.log('request: createGateway:', req.body)
+		console.log('request: createGateway:')
 		const data = req.body
 		const productService = new ProductService()
 		await productService.createGatewayData(data)
+		res.json({ state: 'succcess', message: '게이트웨이가 생성돼었읍니다' })
+	} catch (error) {
+		console.log(error.message)
+		res.json({ state: 'fail', message: error.message })
+	}
+}
+
+productController.createOfficeGateway = async (req, res) => {
+	try {
+		console.log('request: createOfficeGateway:')
+		const data = req.body
+		const productService = new ProductService()
+		if (!data.serial_number) {
+			return res
+				.status(404)
+				.json({ state: 'fail', message: 'Please serial number is required' })
+		}
+		await productService.createOfficeGatewayData(data)
 		res.json({ state: 'succcess', message: '게이트웨이가 생성돼었읍니다' })
 	} catch (error) {
 		console.log(error.message)
@@ -55,7 +73,7 @@ productController.createAngleNodes = async (req, res) => {
 		// Ma'lumot turi array ekanligini tekshiring
 		if (!Array.isArray(angleNodes)) {
 			return res.status(400).json({
-				state: 'Failed',
+				state: 'fail',
 				message: 'Invalid data format. Expected an array.',
 			})
 		}
@@ -69,7 +87,7 @@ productController.createAngleNodes = async (req, res) => {
 		})
 	} catch (error) {
 		console.log(error.message)
-		res.json({ state: 'fail', message: error.message })
+		res.status(400).json({ state: 'fail', message: error.message })
 	}
 }
 

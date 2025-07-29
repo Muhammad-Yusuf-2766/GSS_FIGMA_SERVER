@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const { gateway_type_enums } = require('../lib/config')
 
 const gatewaySchema = new mongoose.Schema({
 	serial_number: {
@@ -13,13 +14,13 @@ const gatewaySchema = new mongoose.Schema({
 				ref: 'Node',
 			},
 		],
-		required: true,
-		validate: {
-			validator: function (nodesArray) {
-				return nodesArray.length > 0 // Ensure array is not empty
-			},
-			message: 'At least one node must be present in the nodes array',
-		},
+		default: [],
+		// validate: {
+		// 	validator: function (nodesArray) {
+		// 		return nodesArray.length > 0 // Ensure array is not empty
+		// 	},
+		// 	message: 'At least one node must be present in the nodes array',
+		// },
 	},
 	angle_nodes: {
 		type: [
@@ -35,6 +36,15 @@ const gatewaySchema = new mongoose.Schema({
 		type: Boolean,
 		required: false,
 		default: true,
+	},
+	gateway_type: {
+		type: String,
+		required: [true, 'Gateway type is required'],
+		default: 'NODE_GATEWAY',
+		enum: {
+			values: gateway_type_enums,
+			message: '{VALUE} is not among permitted gateway types',
+		},
 	},
 	building_id: {
 		type: mongoose.Schema.ObjectId,

@@ -4,6 +4,7 @@ const BuildingSchema = require('../schema/Building.model')
 const NodeSchema = require('../schema/Node.model')
 const AngleNodeSchema = require('../schema/Angle.node.model')
 const AngleNodeHistorySchema = require('../schema/Angle.node.history.model')
+const { mqttClient, mqttEmitter } = require('./Mqtt.service')
 
 class CompanyService {
 	constructor() {
@@ -366,6 +367,98 @@ class CompanyService {
 			console.error(error)
 			throw new Error('Error on deleting company by id')
 		}
+	}
+
+	// ========== Alert mqtt message sender to Company office gateway ========= //
+	async wakeUpOfficeGateway(gatewayNumber) {
+		// Step 1: Serial number orqali gateway topish (har qanday turdagi)
+		const gateway = await this.gatewaySchema.findOne({
+			serial_number: gatewayNumber,
+		})
+
+		if (!gateway || !gateway.building_id) {
+			throw new Error('Not found gateway or building_id')
+		}
+		// Step 2: gateway.building_id orqali building ichidagi OFFICE_GATEWAY larni topish
+		const buildingOfficeGateways = await this.buildingSchema.aggregate([
+			{
+				$match: {
+					_id: gateway.building_id, // Getting building we need
+				},
+			},
+			{
+				$lookup: {
+					from: 'gateways',
+					localField: 'gateway_sets', // Bu building ichidagi array (ObjectId lar)
+					foreignField: '_id', // Bu gateways koleksiyasidagi _id
+					as: 'gateway_docs', // Natijani bu nom bilan array qilib qo‘yadi
+				},
+			},
+			{
+				$project: {
+					building_name: 1,
+					office_gateways: {
+						$filter: {
+							input: '$gateway_docs',
+							as: 'gw',
+							cond: { $eq: ['$$gw.gateway_type', 'OFFICE_GATEWAY'] },
+						},
+					},
+				},
+			},
+		])
+
+		const officeGateways = buildingOfficeGateways[0]?.office_gateways || []
+
+		if (officeGateways.length === 0) {
+			throw new Error('No OFFICE_GATEWAY found for this building')
+		}
+
+		const publishData = {
+			cmd: 3,
+			gateway_type: 'OFFICE_GATEWAY',
+			task: 'wake_up',
+		}
+
+		for (const gw of officeGateways) {
+			const serialNum = gw.serial_number
+			console.log(officeGateways)
+			const topic = `GSSIOT/01030369081/GATE_WAKE_UP/GRM22JU22P${serialNum}`
+			console.log('Topic: ', topic)
+
+			// 1. Publish qilish
+			if (!mqttClient.connected) {
+				throw new Error('MQTT client is not connected')
+			}
+
+			await new Promise((resolve, reject) => {
+				mqttClient.publish(topic, JSON.stringify(publishData), err => {
+					if (err) {
+						reject(new Error(`MQTT publishing failed for topic: ${topic}`))
+					} else {
+						resolve(true)
+					}
+				})
+			})
+
+			// 2. Javobni kutish
+			await new Promise((resolve, reject) => {
+				const timer = setTimeout(() => {
+					reject(new Error('MQTT response timeout'))
+				}, 10000) // 10s timeout
+
+				mqttEmitter.once('gwPubRes', data => {
+					clearTimeout(timer)
+					if (data?.resp === 'success') {
+						resolve(true)
+					} else {
+						reject(new Error('Failed publishing gateway to mqtt'))
+					}
+				})
+			})
+		}
+
+		return 'All OFFICE_GATEWAY type gateways waked up!'
 	}
 
 	// ==========================================================================================================

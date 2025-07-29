@@ -6,6 +6,10 @@ const productController = require('../controllers/product-controller')
 
 product_router.post('/create-nodes', productController.createNodes)
 product_router.post('/create-gateway', productController.createGateway)
+product_router.post(
+	'/create-office-gateway',
+	productController.createOfficeGateway
+)
 product_router.post('/create-angle-nodes', productController.createAngleNodes)
 product_router.get('/get-gateways', productController.getGateways)
 product_router.get('/get-active-gateways', productController.getActiveGateways)

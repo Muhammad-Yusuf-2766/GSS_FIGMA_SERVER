@@ -34,5 +34,6 @@ company_router.delete(
 
 //  =========================  Boss Client user related endpoints ================ //
 company_router.post('/boss-clients', companyController.getBossClients)
+company_router.post('/gateway/wake_up', companyController.wakeUpOfficeGateway)
 
 module.exports = company_router

@@ -199,6 +199,18 @@ companyController.deleteBuilding = async (req, res) => {
 	}
 }
 
+companyController.wakeUpOfficeGateway = async (req, res) => {
+	try {
+		const companyService = new CompanyService()
+		const { gateway_number } = req.body
+		const result = await companyService.wakeUpOfficeGateway(gateway_number)
+		res.json(result)
+	} catch (error) {
+		console.log(error)
+		res.json({ state: 'fail', message: error.message })
+	}
+}
+
 // ==========================================================================================================
 //                              CLIENT-Boss type user related functons                                     //
 // ==========================================================================================================

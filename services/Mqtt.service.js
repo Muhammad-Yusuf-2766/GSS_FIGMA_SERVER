@@ -17,7 +17,7 @@ const allTopics = [
 const nodeTopic = 'GSSIOT/01030369081/GATE_PUB/'
 const angleTopic = 'GSSIOT/01030369081/GATE_ANG/'
 const gwResTopic = 'GSSIOT/01030369081/GATE_RES/'
-
+const EPSILON = 0.1 // yoki kerakli sezgirlik darajasi
 // ================= MQTT LOGICS =============== //
 
 const mqttClient = mqtt.connect('mqtt://gssiot.iptime.org:10200', {
@@ -107,7 +107,7 @@ mqttClient.on('message', async (topic, message) => {
 				timeString
 			)
 			emitGwRes(data)
-		} else if (topic.startsWith(angleTopic))
+		} else if (topic.startsWith(angleTopic)) {
 			console.log(
 				`MPU-6500 sensor data from gateway-${gatewayNumber}:`,
 				data,
@@ -115,40 +115,41 @@ mqttClient.on('message', async (topic, message) => {
 				timeString
 			)
 
-		const updateData = {
-			angle_x: data.angle_x,
-			angle_y: data.angle_y,
-		}
+			const updateData = {
+				angle_x: data.angle_x,
+				angle_y: data.angle_y,
+			}
 
-		const historyData = {
-			gw_number: gatewayNumber,
-			doorNum: data.doorNum,
-			angle_x: data.angle_x,
-			angle_y: data.angle_y,
-		}
+			const historyData = {
+				gw_number: gatewayNumber,
+				doorNum: data.doorNum,
+				angle_x: data.angle_x,
+				angle_y: data.angle_y,
+			}
 
-		// Oldingi ma'lumotni topish
-		const existing = await AngleNodeSchema.findOne({ doorNum: data.doorNum })
+			// Oldingi ma'lumotni topish
+			const existing = await AngleNodeSchema.findOne({ doorNum: data.doorNum })
 
-		if (
-			existing.angle_x !== data.angle_x &&
-			existing.angle_y !== data.angle_y
-		) {
-			// Faqat o‘zgargan bo‘lsa yangilaydi va history saqlaydi
-			const updatedAngleNode = await AngleNodeSchema.findOneAndUpdate(
-				{ doorNum: data.doorNum },
-				{ $set: updateData },
-				{ new: true, upsert: true }
-			)
+			if (
+				Math.abs(existing.angle_x - data.angle_x) > EPSILON ||
+				Math.abs(existing.angle_y - data.angle_y) > EPSILON
+			) {
+				// Faqat o‘zgargan bo‘lsa yangilaydi va history saqlaydi
+				const updatedAngleNode = await AngleNodeSchema.findOneAndUpdate(
+					{ doorNum: data.doorNum },
+					{ $set: updateData },
+					{ new: true, upsert: true }
+				)
 
-			const result = new AngleNodeHistory(historyData)
-			await result.save()
+				const result = new AngleNodeHistory(historyData)
+				await result.save()
 
-			mqttEmitter.emit('mqttAngleMessage', updatedAngleNode)
-		} else {
-			console.log(
-				`⏩ Skip: angle_x va angle_y avvalgisi bilan bir xil (${existing.angle_x}, ${existing.angle_y})`
-			)
+				mqttEmitter.emit('mqttAngleMessage', updatedAngleNode)
+			} else {
+				console.log(
+					`⏩ Skip: angle_x va angle_y avvalgisi bilan bir xil (${existing.angle_x}, ${existing.angle_y})`
+				)
+			}
 		}
 	} catch (err) {
 		console.error('MQTT xabarda xatolik:', err.message)
