@@ -5,6 +5,7 @@ const EventEmitter = require('events')
 const { notifyUsersOfOpenDoor } = require('../services/Telegrambot.service')
 const AngleNodeHistory = require('../schema/Angle.node.history.model')
 const AngleNodeSchema = require('../schema/Angle.node.model')
+const { logger, logError, logInfo } = require('../lib/logger')
 
 // Xabarlarni tarqatish uchun EventEmitter
 const mqttEmitter = new EventEmitter()
@@ -17,7 +18,7 @@ const allTopics = [
 const nodeTopic = 'GSSIOT/01030369081/GATE_PUB/'
 const angleTopic = 'GSSIOT/01030369081/GATE_ANG/'
 const gwResTopic = 'GSSIOT/01030369081/GATE_RES/'
-const EPSILON = 0.1 // yoki kerakli sezgirlik darajasi
+// const EPSILON = 0.09 // yoki kerakli sezgirlik darajasi
 // ================= MQTT LOGICS =============== //
 
 const mqttClient = mqtt.connect('mqtt://gssiot.iptime.org:10200', {
@@ -27,13 +28,13 @@ const mqttClient = mqtt.connect('mqtt://gssiot.iptime.org:10200', {
 })
 
 mqttClient.on('connect', () => {
-	console.log('Connected to GSSIOT MQTT server')
+	logger('Connected to GSSIOT MQTT server')
 	allTopics.forEach(topic => {
 		mqttClient.subscribe(topic, function (err) {
 			if (!err) {
-				console.log('Subscribed to:', topic)
+				logger('Subscribed to:', topic)
 			} else {
-				console.log('Error subscribing:', err)
+				logError('Error subscribing:', err)
 			}
 		})
 	})
@@ -44,7 +45,7 @@ mqttClient.on('message', async (topic, message) => {
 	try {
 		const data = JSON.parse(message.toString())
 		const gatewayNumber = topic.split('/').pop().slice(-4) // Mavzudan UUID ni olish
-		// console.log(`MQTT_data ${gatewayNumber}: ${message}`)
+		// logger(`MQTT_data ${gatewayNumber}: ${message}`)
 		// ====== Hozrgi vaqtni olish ======= //
 		const now = new Date()
 
@@ -59,7 +60,7 @@ mqttClient.on('message', async (topic, message) => {
 		})
 
 		if (topic.startsWith(nodeTopic)) {
-			console.log('Door-Node mqtt message:', data, '|', timeString)
+			logger('Door-Node mqtt message:', data, '|', timeString)
 			const eventData = {
 				gw_number: gatewayNumber,
 				doorNum: data.doorNum,
@@ -80,7 +81,7 @@ mqttClient.on('message', async (topic, message) => {
 			)
 
 			if (!updatedNode) {
-				console.warn('Node topilmadi:', data.doorNum)
+				logInfo('Node topilmadi:', data.doorNum)
 				return
 			}
 
@@ -89,7 +90,7 @@ mqttClient.on('message', async (topic, message) => {
 			try {
 				await mqttEventSchema.save()
 			} catch (err) {
-				console.warn('NodeHistorySchema saqlashda xatolik:', err.message)
+				logError('NodeHistorySchema saqlashda xatolik:', err.message)
 				return
 			}
 
@@ -100,7 +101,7 @@ mqttClient.on('message', async (topic, message) => {
 				await notifyUsersOfOpenDoor(data.doorNum)
 			}
 		} else if (topic.startsWith(gwResTopic)) {
-			console.log(
+			logger(
 				`Gateway-creation event gateway-${gatewayNumber}:`,
 				data,
 				'|',
@@ -108,7 +109,7 @@ mqttClient.on('message', async (topic, message) => {
 			)
 			emitGwRes(data)
 		} else if (topic.startsWith(angleTopic)) {
-			console.log(
+			logger(
 				`MPU-6500 sensor data from gateway-${gatewayNumber}:`,
 				data,
 				'|',
@@ -128,36 +129,36 @@ mqttClient.on('message', async (topic, message) => {
 			}
 
 			// Oldingi ma'lumotni topish
-			const existing = await AngleNodeSchema.findOne({ doorNum: data.doorNum })
+			// Checking last data & save if newData differs from last data Logic
+			// const existing = await AngleNodeSchema.findOne({ doorNum: data.doorNum })
+			// if (
+			// 	Math.abs(existing.angle_x - data.angle_x) > EPSILON ||
+			// 	Math.abs(existing.angle_y - data.angle_y) > EPSILON
+			// ) {
+			// Faqat o‘zgargan bo‘lsa yangilaydi va history saqlaydi
+			const updatedAngleNode = await AngleNodeSchema.findOneAndUpdate(
+				{ doorNum: data.doorNum },
+				{ $set: updateData },
+				{ new: true, upsert: true }
+			)
 
-			if (
-				Math.abs(existing.angle_x - data.angle_x) > EPSILON ||
-				Math.abs(existing.angle_y - data.angle_y) > EPSILON
-			) {
-				// Faqat o‘zgargan bo‘lsa yangilaydi va history saqlaydi
-				const updatedAngleNode = await AngleNodeSchema.findOneAndUpdate(
-					{ doorNum: data.doorNum },
-					{ $set: updateData },
-					{ new: true, upsert: true }
-				)
+			const result = new AngleNodeHistory(historyData)
+			await result.save()
 
-				const result = new AngleNodeHistory(historyData)
-				await result.save()
-
-				mqttEmitter.emit('mqttAngleMessage', updatedAngleNode)
-			} else {
-				console.log(
-					`⏩ Skip: angle_x va angle_y avvalgisi bilan bir xil (${existing.angle_x}, ${existing.angle_y})`
-				)
-			}
+			mqttEmitter.emit('mqttAngleMessage', updatedAngleNode)
+			// } else {
+			// 	logger(
+			// 		`⏩ Skip: angle_x va angle_y avvalgisi bilan bir xil (${existing.angle_x}, ${existing.angle_y})`
+			// 	)
+			// }
 		}
 	} catch (err) {
-		console.error('MQTT xabarda xatolik:', err.message)
+		logError('MQTT xabarda xatolik:', err.message)
 	}
 })
 
 mqttClient.on('error', error => {
-	console.error('MQTT connection error:', error)
+	logError('MQTT connection error:', error)
 })
 
 const emitGwRes = data => {

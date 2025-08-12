@@ -1,10 +1,11 @@
 const CompanyService = require('../services/company.service')
+const { logger, logError } = require('../lib/logger')
 
 let companyController = module.exports
 
 companyController.createBuilding = async (req, res) => {
 	try {
-		console.log('request: createBuilding')
+		logger('request: createBuilding')
 		const data = req.body
 		const companyService = new CompanyService()
 		const result = await companyService.createBuildingData(data)
@@ -14,38 +15,38 @@ companyController.createBuilding = async (req, res) => {
 			message: '빌딩이 생성돼었읍니다',
 		})
 	} catch (error) {
-		console.log(error.message)
+		logError(error.message)
 		res.json({ state: 'fail', message: error.message })
 	}
 }
 
 companyController.getActiveBuildings = async (req, res) => {
 	try {
-		console.log('request: getActiveBuildings')
+		logger('request: getActiveBuildings')
 		const companyService = new CompanyService()
 		const buildings = await companyService.getActiveBuildingsData()
 		res.json({ state: 'succcess', buildings: buildings })
 	} catch (error) {
-		console.log(error.message)
+		logError(error.message)
 		res.json({ state: 'fail', message: error.message })
 	}
 }
 
 companyController.getBuildings = async (req, res) => {
 	try {
-		console.log('request: getBuildings')
+		logger('request: getBuildings')
 		const companyService = new CompanyService()
 		const buildings = await companyService.getBuildingsData()
 		res.json({ state: 'succcess', buildings: buildings })
 	} catch (error) {
-		console.log(error.message)
+		logError(error.message)
 		res.json({ state: 'fail', message: error.message })
 	}
 }
 
 companyController.createClient = async (req, res) => {
 	try {
-		console.log('request: createClient')
+		logger('request: createClient')
 		const data = req.body
 		const companyService = new CompanyService()
 		const client = await companyService.createClientData(data)
@@ -55,14 +56,14 @@ companyController.createClient = async (req, res) => {
 			message: '클라이언트가 생성돼었읍니다',
 		})
 	} catch (error) {
-		console.log(error.message)
+		logError(error.message)
 		res.json({ state: 'fail', message: error.message })
 	}
 }
 
 companyController.getComanies = async (req, res) => {
 	try {
-		console.log('request: getCompanies')
+		logger('request: getCompanies')
 		const comapnyService = new CompanyService()
 		const clients = await comapnyService.getCompanies()
 		res.json({
@@ -70,14 +71,14 @@ companyController.getComanies = async (req, res) => {
 			clients: clients,
 		})
 	} catch (error) {
-		console.log('Error', error.message)
+		logger('Error', error.message)
 		res.json({ state: 'Fail', message: error.message })
 	}
 }
 
 companyController.getClient = async (req, res) => {
 	try {
-		console.log('request: getCompany-buildings')
+		logger('request: getCompany-buildings')
 		const { id } = req.params,
 			comapnyService = new CompanyService(),
 			result = await comapnyService.getCompanyData(id)
@@ -87,14 +88,14 @@ companyController.getClient = async (req, res) => {
 			client_buildings: result.buildings,
 		})
 	} catch (error) {
-		console.log('Error', error.message)
+		logger('Error', error.message)
 		res.json({ state: 'Fail', message: error.message })
 	}
 }
 
 companyController.getBuildingNodes = async (req, res) => {
 	try {
-		console.log('request: getBuildingNodes')
+		logger('request: getBuildingNodes')
 
 		const { id } = req.params
 		const companyService = new CompanyService()
@@ -118,7 +119,7 @@ companyController.getBuildingNodes = async (req, res) => {
 
 companyController.getBuildingAngleNodes = async (req, res) => {
 	try {
-		console.log('request: getBuildingAngleNodes')
+		logger('request: getBuildingAngleNodes')
 
 		const { id } = req.params
 		const companyService = new CompanyService()
@@ -142,7 +143,7 @@ companyController.getBuildingAngleNodes = async (req, res) => {
 
 companyController.getAngleNodeSummary = async (req, res) => {
 	try {
-		console.log('request: getAngleNodeSummary')
+		logger('request: getAngleNodeSummary')
 
 		const { id } = req.params
 		const companyService = new CompanyService()
@@ -165,7 +166,7 @@ companyController.getAngleNodeSummary = async (req, res) => {
 
 companyController.deleteCompany = async (req, res) => {
 	try {
-		console.log('request: deleteCompany')
+		logger('request: deleteCompany')
 		const { clientId } = req.params
 		const companyService = new CompanyService(),
 			result = await companyService.deleteCompanyData(clientId)
@@ -176,14 +177,14 @@ companyController.deleteCompany = async (req, res) => {
 			message: result.message,
 		})
 	} catch (error) {
-		console.log(error.message)
+		logError(error.message)
 		res.json({ state: 'fail', message: error.message })
 	}
 }
 
 companyController.deleteBuilding = async (req, res) => {
 	try {
-		console.log('request: deleteBuilding')
+		logger('request: deleteBuilding')
 		const { buildingId } = req.params
 		const companyService = new CompanyService(),
 			result = await companyService.deleteBuildingData(buildingId)
@@ -194,7 +195,7 @@ companyController.deleteBuilding = async (req, res) => {
 			message: result.message,
 		})
 	} catch (error) {
-		console.log(error.message)
+		logError(error.message)
 		res.json({ state: 'fail', message: error.message })
 	}
 }
@@ -206,7 +207,7 @@ companyController.wakeUpOfficeGateway = async (req, res) => {
 		const result = await companyService.wakeUpOfficeGateway(gateway_number)
 		res.json(result)
 	} catch (error) {
-		console.log(error)
+		logError(error)
 		res.json({ state: 'fail', message: error.message })
 	}
 }
@@ -217,7 +218,7 @@ companyController.wakeUpOfficeGateway = async (req, res) => {
 
 companyController.getBossClients = async (req, res) => {
 	try {
-		console.log('request: getClientBoss')
+		logger('request: getClientBoss')
 		const { userId } = req.body
 		const comapnyService = new CompanyService()
 		const clients = await comapnyService.getBossClientsData(userId)
@@ -226,14 +227,14 @@ companyController.getBossClients = async (req, res) => {
 			clients: clients,
 		})
 	} catch (error) {
-		console.log('Error', error.message)
+		logger('Error', error.message)
 		res.json({ state: 'Fail', message: error.message })
 	}
 }
 
 companyController.getBossBuildings = async (req, res) => {
 	try {
-		console.log('request: getBossBuildings')
+		logger('request: getBossBuildings')
 		const { clientId } = req.body,
 			comapnyService = new CompanyService(),
 			result = await comapnyService.getBossBuildingsData(clientId)
@@ -243,7 +244,7 @@ companyController.getBossBuildings = async (req, res) => {
 			client_buildings: result.buildings,
 		})
 	} catch (error) {
-		console.log('Error', error.message)
+		logger('Error', error.message)
 		res.json({ state: 'Fail', message: error.message })
 	}
 }

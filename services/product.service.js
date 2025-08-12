@@ -153,6 +153,35 @@ class ProductService {
 		}
 	}
 
+	async makeWakeUpOfficeGateway(gw_number, alarmActive, alertLevel) {
+		try {
+			// gateway Mqtt publish logic
+			// const gw_number = '0102'
+
+			let topic = `GSSIOT/01030369081/GATE_SUB/GRM22JU22P${gw_number}`
+
+			const publishData = {
+				cmd: 3,
+				alarmActive,
+				alertLevel: alertLevel,
+			}
+			console.log('Publish-data:', publishData)
+
+			// 3. MQTT serverga muvaffaqiyatli yuborilishini tekshirish
+			if (mqttClient.connected) {
+				console.log(topic)
+
+				mqttClient.publish(topic.toString(), JSON.stringify(publishData))
+			} else {
+				throw new Error('MQTT client is not connected')
+			}
+
+			return topic
+		} catch (error) {
+			throw new Error(`Error on creating-gateway: ${error.message}`)
+		}
+	}
+
 	async combineAngleNodeToGatewayData(data) {
 		try {
 			// exsting gateway checkng logic

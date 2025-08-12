@@ -10,6 +10,10 @@ product_router.post(
 	'/create-office-gateway',
 	productController.createOfficeGateway
 )
+product_router.get(
+	'/wake-up-gateway',
+	productController.makeWakeUpOfficeGateway
+)
 product_router.post('/create-angle-nodes', productController.createAngleNodes)
 product_router.get('/get-gateways', productController.getGateways)
 product_router.get('/get-active-gateways', productController.getActiveGateways)

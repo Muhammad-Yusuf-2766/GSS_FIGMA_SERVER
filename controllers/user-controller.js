@@ -2,12 +2,13 @@ const assert = require('assert')
 const UserService = require('../services/user.service')
 const jwt = require('jsonwebtoken')
 const UserSchema = require('../schema/User.model')
+const { logger, logError } = require('../lib/logger')
 
 let userController = module.exports
 
 userController.register = async (req, res, next) => {
 	try {
-		console.log('request: register')
+		logger('request: register')
 		const data = req.body
 		const userService = new UserService()
 		const new_user = await userService.registerData(data)
@@ -23,14 +24,14 @@ userController.register = async (req, res, next) => {
 
 		res.status(200).json({ state: 'success', user: new_user })
 	} catch (error) {
-		console.log('Error', error.message)
+		logError('Error', error.message)
 		res.json({ state: 'fail', message: error.message })
 	}
 }
 
 userController.login = async (req, res, next) => {
 	try {
-		console.log('POST: contr.User-Login')
+		logger('POST: contr.User-Login')
 		const data = req.body
 		const userService = new UserService()
 		const user = await userService.loginData(data)
@@ -54,14 +55,14 @@ userController.login = async (req, res, next) => {
 
 		return res.status(200).json({ state: 'success', data: user, token: token })
 	} catch (error) {
-		console.log('ERROR: contr.User-Login', error)
+		logError('ERROR: contr.User-Login', error)
 		res.status(401).json({ state: 'fail', message: error.message })
 	}
 }
 
 userController.checkUser = async (req, res) => {
 	try {
-		console.log('request: Check me')
+		logger('request: Check me')
 		const token = req.cookies.access_token
 		if (!token) return res.status(401).send('Unauthorized')
 
@@ -79,68 +80,68 @@ userController.checkUser = async (req, res) => {
 }
 
 userController.logout = async (req, res, next) => {
-	console.log('POST: contr.User-Logout')
+	logger('POST: contr.User-Logout')
 	res.clearCookie('access_token')
 	return res.json({ state: 'success' })
 }
 
 userController.getUsers = async (req, res, next) => {
 	try {
-		console.log('request: get-users')
+		logger('request: get-users')
 		const userService = new UserService()
 		const users = await userService.getUsers()
 		return res.json({ state: 'success', users: users })
 	} catch (error) {
-		console.log('ERROR: contr.User: getUser', error)
+		logError('ERROR: contr.User: getUser', error)
 		res.json({ state: 'fail', message: error.message })
 	}
 }
 
 userController.updateUserType = async (req, res) => {
 	try {
-		console.log('request: updateUserType')
+		logger('request: updateUserType')
 		const data = req.body
 		const userService = new UserService()
 		const result = await userService.updateUserTypesData(data)
-		console.log('Changed user', data)
+		logger('Changed user', data)
 		res.json({ state: 'success', user: result })
 	} catch (error) {
-		console.log('ERROR: updateUserType', error)
+		logError('ERROR: updateUserType', error)
 		res.json({ state: 'fail', message: error.message })
 	}
 }
 
 userController.deleteUser = async (req, res) => {
 	try {
-		console.log('request: deleteUser')
+		logger('request: deleteUser')
 		const { user_id } = req.body
-		console.log(req.body)
+		logger(req.body)
 
 		const userService = new UserService()
 		const result = await userService.deletingUserData(user_id)
 		res.json({ state: 'success', user: result })
 	} catch (error) {
-		console.log('ERROR: updateUserType', error)
+		logError('ERROR: updateUserType', error)
 		res.json({ state: 'fail', message: error.message })
 	}
 }
 
 userController.makeUser = async (req, res) => {
 	try {
-		console.log('request: Make-User', req.body)
+		logger('request: Make-User', req.body)
 		const user_id = req.body
 		const userService = new UserService()
 		const data = await userService.makeUserData(user_id)
 		res.json({ state: 'success', user: data })
 	} catch (error) {
-		console.log('ERROR: contr.User: Make-User', error)
+		logError('ERROR: contr.User: Make-User', error)
 		res.json({ state: 'fail', message: error.message })
 	}
 }
 
 userController.resetPwRequest = async (req, res) => {
 	try {
-		console.log('request: reset-password', req.body)
+		logger('request: reset-password', req.body)
 		const { user_email } = req.body
 		const userService = new UserService()
 		const result = await userService.resetPwRequest(user_email)
@@ -148,13 +149,13 @@ userController.resetPwRequest = async (req, res) => {
 			.status(200)
 			.json({ state: result.state, message: result.message })
 	} catch (error) {
-		console.log('ERROR: resetPwResquest', error)
+		logError('ERROR: resetPwResquest', error)
 		res.json({ state: 'fail', message: error.message })
 	}
 }
 userController.resetPwVerify = async (req, res) => {
 	try {
-		console.log('POST: contr.User: resetPwVerify', req.body)
+		logger('POST: contr.User: resetPwVerify', req.body)
 		const { user_email, otp, new_password } = req.body
 		const userService = new UserService()
 		const result = await userService.resetPwVerify(
@@ -166,7 +167,7 @@ userController.resetPwVerify = async (req, res) => {
 			.status(200)
 			.json({ state: result.state, message: result.message })
 	} catch (error) {
-		console.log('ERROR: contr.User: resetPwResquest', error)
+		logError('ERROR: contr.User: resetPwResquest', error)
 		res.json({ state: 'fail', message: error.message })
 	}
 }

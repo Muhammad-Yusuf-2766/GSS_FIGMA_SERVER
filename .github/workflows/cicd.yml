@@ -34,4 +34,5 @@ jobs:
           -e DB_PASSWORD='${{ secrets.DB_PASSWORD }}' \
           -e JWT_SECRET_KEY='${{ secrets.JWT_SECRET_KEY }}' \
           -e TELEGRAM_BOT_TOKEN='${{secrets.TELEGRAM_BOT_TOKEN}}' \
+          -e DEBUG_LOGER='${{secrets.DEBUG_LOGER}}' \
           muhammadyusuf2766/gssiotfigma-server

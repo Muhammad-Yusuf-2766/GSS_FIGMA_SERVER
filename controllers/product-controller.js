@@ -2,6 +2,7 @@ const ProductService = require('../services/product.service')
 const path = require('path')
 const fs = require('fs')
 const AngleNodeHistory = require('../schema/Angle.node.history.model')
+const { logger, logError } = require('../lib/logger')
 
 let productController = module.exports
 
@@ -9,9 +10,8 @@ let productController = module.exports
 
 productController.createNodes = async (req, res) => {
 	try {
-		console.log('request: createNode')
+		logger('request: createNode')
 		const nodes = req.body
-
 		// Ma'lumot turi array ekanligini tekshiring
 		if (!Array.isArray(nodes)) {
 			return res.status(400).json({
@@ -29,27 +29,46 @@ productController.createNodes = async (req, res) => {
 			nodes: createdNodes,
 		})
 	} catch (error) {
-		console.log(error.message)
+		logError(error.message)
 		res.json({ state: 'fail', message: error.message })
 	}
 }
 
 productController.createGateway = async (req, res) => {
 	try {
-		console.log('request: createGateway:')
+		logger('request: createGateway:')
 		const data = req.body
 		const productService = new ProductService()
 		await productService.createGatewayData(data)
 		res.json({ state: 'succcess', message: '게이트웨이가 생성돼었읍니다' })
 	} catch (error) {
-		console.log(error.message)
+		logError(error.message)
+		res.json({ state: 'fail', message: error.message })
+	}
+}
+
+productController.makeWakeUpOfficeGateway = async (req, res) => {
+	try {
+		logger('request: makeWakeUpOfficeGateway:')
+		const gwNumber = req.query.gw_number
+		const alarmActive = req.query.alarmActive === 'true' // "true" bo‘lsa true, aks holda false
+		const alertLevel = Number(req.query.alertLevel)
+		const productService = new ProductService()
+		const result = await productService.makeWakeUpOfficeGateway(
+			gwNumber,
+			alarmActive,
+			alertLevel
+		)
+		res.json({ state: 'succcess', message: `request sent to ${result}` })
+	} catch (error) {
+		logError(error.message)
 		res.json({ state: 'fail', message: error.message })
 	}
 }
 
 productController.createOfficeGateway = async (req, res) => {
 	try {
-		console.log('request: createOfficeGateway:')
+		logger('request: createOfficeGateway:')
 		const data = req.body
 		const productService = new ProductService()
 		if (!data.serial_number) {
@@ -60,14 +79,14 @@ productController.createOfficeGateway = async (req, res) => {
 		await productService.createOfficeGatewayData(data)
 		res.json({ state: 'succcess', message: '게이트웨이가 생성돼었읍니다' })
 	} catch (error) {
-		console.log(error.message)
+		logError(error.message)
 		res.json({ state: 'fail', message: error.message })
 	}
 }
 
 productController.createAngleNodes = async (req, res) => {
 	try {
-		console.log('request: createAngleNodes')
+		logger('request: createAngleNodes')
 		const angleNodes = req.body
 
 		// Ma'lumot turi array ekanligini tekshiring
@@ -86,38 +105,38 @@ productController.createAngleNodes = async (req, res) => {
 			message: `${createdNodes.length} angle nodes created successfully!`,
 		})
 	} catch (error) {
-		console.log(error.message)
+		logError(error.message)
 		res.status(400).json({ state: 'fail', message: error.message })
 	}
 }
 
 productController.getGateways = async (req, res) => {
 	try {
-		console.log('request: getGateways')
+		logger('request: getGateways')
 		const productService = new ProductService()
 		const gateways = await productService.getGatewaysData()
 		res.json({ state: 'succcess', gateways: gateways })
 	} catch (error) {
-		console.log(error.message)
+		logError(error.message)
 		res.json({ state: 'Fail', message: error.message })
 	}
 }
 
 productController.getActiveGateways = async (req, res) => {
 	try {
-		console.log('request: getActiveGatewaysData')
+		logger('request: getActiveGatewaysData')
 		const productService = new ProductService()
 		const gateways = await productService.getActiveGatewaysData()
 		res.json({ state: 'succcess', gateways: gateways })
 	} catch (error) {
-		console.log(error.message)
+		logError(error.message)
 		res.json({ state: 'fail', message: error.message })
 	}
 }
 
 productController.getSingleGateway = async (req, res) => {
 	try {
-		console.log('request: getSingleGateway')
+		logger('request: getSingleGateway')
 		const { number } = req.params
 
 		const productService = new ProductService()
@@ -146,31 +165,31 @@ productController.getSingleGateway = async (req, res) => {
 
 productController.getNodes = async (req, res) => {
 	try {
-		console.log('request: getNodes')
+		logger('request: getNodes')
 		const productService = new ProductService()
 		const nodes = await productService.getNodesData()
 		res.json({ state: 'succcess', nodes: nodes })
 	} catch (error) {
-		console.log(error.message)
+		logError(error.message)
 		res.json({ state: 'Fail', message: error.message })
 	}
 }
 
 productController.getActiveNodes = async (req, res) => {
 	try {
-		console.log('request: getNodes')
+		logger('request: getNodes')
 		const productService = new ProductService()
 		const nodes = await productService.getActiveNodesData()
 		res.json({ state: 'succcess', nodes: nodes })
 	} catch (error) {
-		console.log(error.message)
+		logError(error.message)
 		res.json({ state: 'fail', message: error.message })
 	}
 }
 
 productController.getActiveAngleNodes = async (req, res) => {
 	try {
-		console.log('request: getActiveAngleNodes')
+		logger('request: getActiveAngleNodes')
 		const productService = new ProductService()
 		const angleNodes = await productService.getActiveAngleNodesData()
 
@@ -197,7 +216,7 @@ productController.getActiveAngleNodes = async (req, res) => {
 
 productController.downloadNodeHistory = async (req, res) => {
 	try {
-		console.log('request: downloadNodeHistory')
+		logger('request: downloadNodeHistory')
 		const { buildingId } = req.query
 		const productService = new ProductService()
 		const buffer = await productService.downloadNodeHistoryData(buildingId)
@@ -218,7 +237,7 @@ productController.downloadNodeHistory = async (req, res) => {
 
 productController.combineAngleNodeToGateway = async (req, res) => {
 	try {
-		console.log('request: combineAngleNodeToGateway:')
+		logger('request: combineAngleNodeToGateway:')
 		const data = req.body
 		const productService = new ProductService()
 		await productService.combineAngleNodeToGatewayData(data)
@@ -227,7 +246,7 @@ productController.combineAngleNodeToGateway = async (req, res) => {
 			message: '비계전도 노드가 게이트웨이에 속했습니다다',
 		})
 	} catch (error) {
-		console.log(error.message)
+		logError(error.message)
 		res.json({ state: 'fail', message: error.message })
 	}
 }
@@ -236,7 +255,7 @@ productController.combineAngleNodeToGateway = async (req, res) => {
 
 productController.updateProductStatus = async (req, res) => {
 	try {
-		console.log('POST: reActivateNode')
+		logger('POST: reActivateNode')
 		const { product_type, product_id } = req.body
 		const productService = new ProductService()
 
@@ -260,14 +279,14 @@ productController.updateProductStatus = async (req, res) => {
 			message: 'undefined product type.',
 		})
 	} catch (error) {
-		console.log('ERROR: update all nodes', error)
+		logger('ERROR: update all nodes', error)
 		res.status(500).json({ state: 'Fail', message: error.message })
 	}
 }
 
 productController.deleteProduct = async (req, res) => {
 	try {
-		console.log('POST: deleteProduct')
+		logger('POST: deleteProduct')
 		const { product_type, product_id } = req.body
 		const productService = new ProductService()
 
@@ -290,14 +309,14 @@ productController.deleteProduct = async (req, res) => {
 			message: 'undefined product type.',
 		})
 	} catch (error) {
-		console.log('ERROR: update all nodes', error)
+		logger('ERROR: update all nodes', error)
 		res.status(500).json({ state: 'Fail', message: error.message })
 	}
 }
 
 productController.setNodesPosition = async (req, res) => {
 	try {
-		console.log('POST: setNodesPosition')
+		logger('POST: setNodesPosition')
 		const data = req.body
 
 		// Ma'lumotlarni tekshirish
@@ -322,14 +341,14 @@ productController.setNodesPosition = async (req, res) => {
 		// Muvaffaqiyatli javob
 		res.json({ state: 'success', message: result.message })
 	} catch (error) {
-		console.log('Error on setNodesPosition', error.message)
+		logger('Error on setNodesPosition', error.message)
 		res.status(500).json({ state: 'fail', error: error.message })
 	}
 }
 
 productController.uploadXlsFile = async (req, res) => {
 	try {
-		console.log('request: uploadXlsFile')
+		logger('request: uploadXlsFile')
 		const { buildingId, nodesPosition } = req.body
 		if (!req.files || !req.files.file) {
 			return res.status(400).json({ error: 'Fayl tanlanmagan' })
@@ -372,7 +391,7 @@ productController.uploadXlsFile = async (req, res) => {
 
 // ========================== Angle-Node-Graphic routes ================================== //
 productController.angleNodeGraphicData = async (req, res) => {
-	console.log('request: angleNodeGraphicData')
+	logger('request: angleNodeGraphicData')
 
 	try {
 		const { doorNum, from, to } = req.query
